@@ -7,3 +7,4 @@ torch
 pyyaml
 jupyter
 tqdm
+pytest

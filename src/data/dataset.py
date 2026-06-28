@@ -17,9 +17,10 @@ from torch.utils.data import Dataset, DataLoader
 def create_sliding_windows(
     data_x: np.ndarray,
     data_y: np.ndarray,
+    dates: np.ndarray,
     input_len: int,
     horizon: int,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Convert one time-series split into supervised learning samples.
 
     Important:
@@ -33,6 +34,10 @@ def create_sliding_windows(
         Scaled input features. Shape: [num_time_steps, num_features]
     data_y : np.ndarray
         Scaled target OT values. Shape: [num_time_steps, 1]
+    dates : np.ndarray
+        Timestamps aligned with data_x / data_y. Shape: [num_time_steps]
+        Used to record the real date of each forecast horizon, which is needed
+        for prediction / residual / anomaly plots downstream.
     input_len : int
         Number of historical time steps used as model input.
     horizon : int
@@ -44,11 +49,21 @@ def create_sliding_windows(
         Input windows. Shape: [num_samples, input_len, num_features]
     y : np.ndarray
         Forecasting targets. Shape: [num_samples, horizon]
+    y_dates : np.ndarray
+        Timestamps of each forecast target (t+1 .. t+horizon).
+        Shape: [num_samples, horizon]
     """
     if len(data_x) != len(data_y):
         raise ValueError(
             f"data_x and data_y must have the same length, "
             f"but got {len(data_x)} and {len(data_y)}."
+        )
+
+    dates = np.asarray(dates)
+    if len(dates) != len(data_x):
+        raise ValueError(
+            f"dates must have the same length as data_x, "
+            f"but got {len(dates)} and {len(data_x)}."
         )
 
     if data_y.ndim != 2 or data_y.shape[1] != 1:
@@ -71,6 +86,7 @@ def create_sliding_windows(
 
     X = np.zeros((num_samples, input_len, num_features), dtype=np.float32)
     y = np.zeros((num_samples, horizon), dtype=np.float32)
+    y_dates = np.empty((num_samples, horizon), dtype=dates.dtype)
 
     for i in range(num_samples):
         input_start = i
@@ -81,8 +97,9 @@ def create_sliding_windows(
 
         X[i] = data_x[input_start:input_end]
         y[i] = data_y[target_start:target_end, 0]
+        y_dates[i] = dates[target_start:target_end]
 
-    return X, y
+    return X, y, y_dates
 
 
 class ETTDataset(Dataset):
@@ -160,26 +177,48 @@ def prepare_windowed_dataloaders(
     Dict[str, object]
         Windowed arrays, DataLoaders and metadata.
     """
-    train_X, train_y = create_sliding_windows(
+    train_X, train_y, train_y_dates = create_sliding_windows(
         scaled_data["train_x"],
         scaled_data["train_y"],
+        scaled_data["train_dates"],
         input_len=input_len,
         horizon=horizon,
     )
 
-    val_X, val_y = create_sliding_windows(
+    val_X, val_y, val_y_dates = create_sliding_windows(
         scaled_data["val_x"],
         scaled_data["val_y"],
+        scaled_data["val_dates"],
         input_len=input_len,
         horizon=horizon,
     )
 
-    test_X, test_y = create_sliding_windows(
+    test_X, test_y, test_y_dates = create_sliding_windows(
         scaled_data["test_x"],
         scaled_data["test_y"],
+        scaled_data["test_dates"],
         input_len=input_len,
         horizon=horizon,
     )
+
+    # Fail fast on shape mismatches before they reach the models.
+    num_features = scaled_data["num_features"]
+    for split_name, split_X, split_y in (
+        ("train", train_X, train_y),
+        ("val", val_X, val_y),
+        ("test", test_X, test_y),
+    ):
+        assert split_X.ndim == 3, f"{split_name}_X must be 3D, got {split_X.ndim}D"
+        assert split_y.ndim == 2, f"{split_name}_y must be 2D, got {split_y.ndim}D"
+        assert split_X.shape[1] == input_len, (
+            f"{split_name}_X input_len mismatch: {split_X.shape[1]} != {input_len}"
+        )
+        assert split_y.shape[1] == horizon, (
+            f"{split_name}_y horizon mismatch: {split_y.shape[1]} != {horizon}"
+        )
+        assert split_X.shape[2] == num_features, (
+            f"{split_name}_X num_features mismatch: {split_X.shape[2]} != {num_features}"
+        )
 
     train_loader = create_dataloader(
         train_X, train_y, batch_size=batch_size, shuffle=True
@@ -198,6 +237,9 @@ def prepare_windowed_dataloaders(
         "val_y": val_y,
         "test_X": test_X,
         "test_y": test_y,
+        "train_y_dates": train_y_dates,
+        "val_y_dates": val_y_dates,
+        "test_y_dates": test_y_dates,
         "train_loader": train_loader,
         "val_loader": val_loader,
         "test_loader": test_loader,

@@ -186,6 +186,10 @@ def prepare_scaled_splits(
         "val_y": val_y,
         "test_x": test_x,
         "test_y": test_y,
+        # Timestamps per split, used later to attach real dates to each window.
+        "train_dates": train_df["date"].to_numpy(),
+        "val_dates": val_df["date"].to_numpy(),
+        "test_dates": test_df["date"].to_numpy(),
         "scaler_x": scaler_x,
         "scaler_y": scaler_y,
         "feature_cols": feature_cols,

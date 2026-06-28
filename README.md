@@ -130,17 +130,56 @@ src/
     loader.py        # load ETT CSV, parse dates, quality checks
     splitter.py      # chronological train/val/test split
     preprocessing.py # scaler_x / scaler_y, feature selection, inverse transform
-    dataset.py       # sliding windows, ETTDataset, DataLoaders
+    dataset.py       # sliding windows (with y_dates), ETTDataset, DataLoaders
+    pipeline.py      # build_data_pipeline(): unified entry + metadata
   utils/
     seed.py          # global random seed
     device.py        # CPU / CUDA / MPS selection
-    config.py        # YAML config loading
+    config.py        # YAML config loading + validate_config()
 configs/
   ETTh1_multivariate_h24.yaml
   ETTh1_univariate_h24.yaml
+experiments/
+  check_module1_pipeline.py  # Module 1 interface acceptance check
+tests/
+  test_data_pipeline.py      # minimal pytest suite for Module 1
 results/
   figures/          # EDA figures
-  metrics/          # summary statistics, metrics
+  metrics/          # summary statistics, metrics, pipeline metadata JSON
+```
+
+### Unified pipeline entry
+
+`src/data/pipeline.py` exposes `build_data_pipeline(config)`, which runs the
+whole leakage-free flow and returns ready-to-use DataLoaders, scalers, metadata
+and per-window target dates. Downstream modules only need:
+
+```python
+from src.utils.config import load_config
+from src.data.pipeline import build_data_pipeline
+
+config = load_config("configs/ETTh1_multivariate_h24.yaml")
+data = build_data_pipeline(config, save_metadata=True)
+
+train_loader = data["train_loader"]
+val_loader = data["val_loader"]
+test_loader = data["test_loader"]
+num_features = data["num_features"]   # model input_dim
+horizon = data["horizon"]             # model output_dim
+scaler_y = data["scaler_y"]           # original-scale metrics
+```
+
+The config is validated up front (`validate_config()` checks input_type, split
+ratios, positive window/batch sizes and dataset path). Each window also carries
+`y_dates` (shape `[num_samples, horizon]`) so predictions, residuals and
+anomalies can be plotted against real timestamps. Pipeline metadata
+(sample counts, features, horizon, ...) is saved to `results/metrics/` for
+reproducibility.
+
+Run the tests with:
+
+```bash
+pytest tests/
 ```
 
 ## Setup
