@@ -4,5 +4,6 @@ matplotlib
 seaborn
 scikit-learn
 torch
+pyyaml
 jupyter
 tqdm

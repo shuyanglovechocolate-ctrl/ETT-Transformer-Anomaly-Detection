@@ -1,0 +1,18 @@
+dataset:
+  name: ETTh1
+  path: data/raw/ETTh1.csv
+  target: OT
+  input_type: univariate
+
+split:
+  train_ratio: 0.7
+  val_ratio: 0.1
+  test_ratio: 0.2
+
+window:
+  input_len: 96
+  horizon: 24
+
+training:
+  batch_size: 64
+  seed: 42
