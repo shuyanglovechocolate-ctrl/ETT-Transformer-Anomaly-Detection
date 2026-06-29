@@ -182,6 +182,36 @@ Run the tests with:
 pytest tests/
 ```
 
+To batch-generate experiment configs for Module 3:
+
+```bash
+python experiments/generate_configs.py
+```
+
+This writes one YAML per `dataset x input_type x input_len x horizon x seed`
+combination into `configs/generated/` (git-ignored, regenerate on demand).
+
+### Data Contract
+
+Module 1 guarantees the following interface to downstream modules:
+
+| Name | Shape / type | Meaning |
+| --- | --- | --- |
+| `X` (batch) | `[batch_size, input_len, num_features]` | Model input window |
+| `y` (batch) | `[batch_size, horizon]` | Forecast target (OT, scaled) |
+| `y_dates` | `[num_samples, horizon]` | Real timestamp of every target step |
+| `num_features` | `int` (1 univariate / 7 multivariate) | Model `input_dim` |
+| `horizon` | `int` | Model `output_dim` |
+| `feature_cols` | `list[str]` | Ordered input feature names |
+| `input_type` | `str` | `"univariate"` or `"multivariate"` |
+| `scaler_y` | fitted scaler | Inverse-transform predictions to original OT scale |
+| `train_loader` / `val_loader` / `test_loader` | `DataLoader` | Batched samples (train shuffled; val/test not) |
+
+Module 2 (models) reads `num_features` and `horizon`; Module 3 (training) reads
+the three DataLoaders; Modules 3/4 use `scaler_y` for original-scale MAE / RMSE /
+residuals and `y_dates` for time-aligned plots. All values are produced by
+`build_data_pipeline(config)`.
+
 ## Setup
 
 ```bash

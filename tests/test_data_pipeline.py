@@ -90,6 +90,36 @@ def test_sliding_window_shape_and_dates():
     assert y_dates[0, 0] == dates[96]
 
 
+def test_y_dates_alignment():
+    """Each window's target dates must line up exactly with the source series.
+
+    Downstream residual plots, dashboards and anomaly markers rely on this, so
+    the alignment is asserted explicitly rather than only checked by hand.
+    """
+    n, input_len, horizon = 500, 96, 24
+    df = make_synthetic_df(n)
+    dates = df["date"].to_numpy()
+    data_x = df[ETT_FEATURES].to_numpy()
+    data_y = df[["OT"]].to_numpy()
+
+    _, _, y_dates = create_sliding_windows(
+        data_x, data_y, dates, input_len=input_len, horizon=horizon
+    )
+
+    # First sample: targets are t+1 .. t+horizon right after the input window.
+    assert y_dates[0, 0] == dates[input_len]
+    assert y_dates[0, -1] == dates[input_len + horizon - 1]
+
+    # An arbitrary interior sample must hold the same relationship.
+    i = 100
+    assert y_dates[i, 0] == dates[i + input_len]
+    assert y_dates[i, -1] == dates[i + input_len + horizon - 1]
+
+    # Within a window the target dates are strictly increasing and contiguous.
+    step = dates[1] - dates[0]
+    assert np.all(np.diff(y_dates[0]) == step)
+
+
 def test_boundary_handling_no_leakage():
     # Large enough that every split (incl. the 10% val) can form windows.
     df = make_synthetic_df(3000)

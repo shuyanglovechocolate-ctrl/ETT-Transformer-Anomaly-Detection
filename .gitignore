@@ -9,5 +9,8 @@ __pycache__/
 venv/
 env/
 
+# Generated experiment configs (regenerate with experiments/generate_configs.py)
+configs/generated/
+
 # OS
 .DS_Store
