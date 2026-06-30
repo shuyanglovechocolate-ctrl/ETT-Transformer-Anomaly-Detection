@@ -242,6 +242,11 @@ All models subclass `BaseForecaster` (`src/models/base.py`) and read
 resolves the OT column index from `feature_cols`, so it works for both
 univariate and multivariate inputs.
 
+> **Note on DLinear.** The current DLinear implementation is a simplified linear
+> baseline that maps flattened historical windows directly to multi-horizon
+> forecasts. A decomposition-based DLinear variant (trend/seasonal) may be added
+> later if required.
+
 ### Model factory and config
 
 A `model` section selects the model and its hyper-parameters:
