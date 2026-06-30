@@ -12,5 +12,10 @@ env/
 # Generated experiment configs (regenerate with experiments/generate_configs.py)
 configs/generated/
 
+# Heavy experiment artifacts (keep metrics/ and selected figures/ in git)
+results/checkpoints/
+results/predictions/
+results/logs/
+
 # OS
 .DS_Store

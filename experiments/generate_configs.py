@@ -54,6 +54,9 @@ def build_config(name, input_type, input_len, horizon, seed):
         "training": {
             "batch_size": 64,
             "seed": seed,
+            "epochs": 10,
+            "learning_rate": 0.001,
+            "weight_decay": 0.0,
         },
     }
 
