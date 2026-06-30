@@ -29,7 +29,24 @@ from src.training import (
     save_checkpoint,
     load_checkpoint,
     EarlyStopping,
+    build_experiment_id,
+    build_output_paths,
+    save_config_snapshot,
+    append_experiment_log,
+    run_experiment_from_config,
 )
+
+
+def _full_config(model_section, input_type="multivariate", epochs=1):
+    return {
+        "dataset": {"name": "ETTh1", "path": "data/raw/ETTh1.csv",
+                    "target": "OT", "input_type": input_type},
+        "split": {"train_ratio": 0.7, "val_ratio": 0.1, "test_ratio": 0.2},
+        "window": {"input_len": 96, "horizon": 24},
+        "training": {"batch_size": 64, "seed": 42, "epochs": epochs,
+                     "learning_rate": 0.001, "weight_decay": 0.0},
+        "model": model_section,
+    }
 
 INPUT_LEN = 16
 HORIZON = 4
@@ -207,3 +224,70 @@ def test_build_and_run_reduce_on_plateau():
         epochs=2, scheduler=scheduler,
     )
     assert history["epochs_ran"] == 2
+
+
+# ---------------------------------------------------------------------------
+# 5.3: experiment runner and logging
+# ---------------------------------------------------------------------------
+
+def test_build_experiment_id_format():
+    eid = build_experiment_id(_full_config({"name": "dlinear"}))
+    assert eid == "ETTh1_dlinear_multivariate_len96_h24_seed42"
+
+
+def test_build_experiment_id_channel_independent_marker():
+    eid = build_experiment_id(
+        _full_config({"name": "dlinear", "channel_independent": True})
+    )
+    assert eid == "ETTh1_dlinear_ci_multivariate_len96_h24_seed42"
+
+
+def test_build_output_paths_keys():
+    paths = build_output_paths("expid", results_dir="results")
+    for key in ("checkpoint", "metrics", "predictions", "loss_curve",
+                "prediction_plot", "history", "config_snapshot"):
+        assert key in paths
+    assert paths["config_snapshot"].endswith("expid_config.yaml")
+
+
+def test_save_config_snapshot_writes_yaml(tmp_path):
+    import yaml
+    config = _full_config({"name": "linear"})
+    path = tmp_path / "snap.yaml"
+    save_config_snapshot(config, str(path))
+    assert path.exists()
+    loaded = yaml.safe_load(path.read_text())
+    assert loaded["model"]["name"] == "linear"
+
+
+def test_append_experiment_log_header_then_append(tmp_path):
+    import csv
+    log = tmp_path / "experiment_log.csv"
+    append_experiment_log({"experiment_id": "a", "mae": 1.0}, str(log))
+    append_experiment_log({"experiment_id": "b", "mae": 2.0}, str(log))
+    with open(log) as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 2
+    assert rows[0]["experiment_id"] == "a"
+    assert rows[1]["experiment_id"] == "b"
+
+
+def test_run_experiment_end_to_end(tmp_path):
+    # Real ETTh1, linear model, 1 epoch, results redirected to tmp_path.
+    config = _full_config({"name": "linear"}, epochs=1)
+    record = run_experiment_from_config(
+        config,
+        overrides={"epochs": 1},
+        project_root=str(PROJECT_ROOT),
+        results_dir=str(tmp_path),
+    )
+    # Structured metrics record.
+    for key in ("experiment_id", "dataset", "model", "metrics", "training", "paths"):
+        assert key in record
+    assert "mae" in record["metrics"]
+    # Files written under the redirected results dir.
+    eid = record["experiment_id"]
+    assert (tmp_path / "metrics" / f"{eid}_metrics.json").exists()
+    assert (tmp_path / "predictions" / f"{eid}_predictions.csv").exists()
+    assert (tmp_path / "logs" / f"{eid}_config.yaml").exists()
+    assert (tmp_path / "metrics" / "experiment_log.csv").exists()

@@ -6,6 +6,15 @@ from src.training.predictor import predict, create_prediction_dataframe
 from src.training.checkpoint import save_checkpoint, load_checkpoint
 from src.training.plots import save_loss_curve, save_prediction_plot
 from src.training.early_stopping import EarlyStopping
+from src.training.experiment import (
+    build_experiment_id,
+    build_output_paths,
+    save_config_snapshot,
+    save_json,
+    append_experiment_log,
+    run_experiment,
+    run_experiment_from_config,
+)
 
 __all__ = [
     "train_one_epoch",
@@ -20,4 +29,11 @@ __all__ = [
     "save_loss_curve",
     "save_prediction_plot",
     "EarlyStopping",
+    "build_experiment_id",
+    "build_output_paths",
+    "save_config_snapshot",
+    "save_json",
+    "append_experiment_log",
+    "run_experiment",
+    "run_experiment_from_config",
 ]
