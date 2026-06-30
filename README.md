@@ -135,7 +135,8 @@ src/
   models/
     base.py          # BaseForecaster
     naive.py         # Naive / persistence baseline
-    dlinear.py       # linear baseline (DLinear-style)
+    linear.py        # plain linear baseline
+    dlinear.py       # decomposition-based DLinear (trend + seasonal)
     lstm.py          # LSTM forecaster
     transformer.py   # Transformer forecaster + positional encoding
     factory.py       # build_model() from config
@@ -221,19 +222,28 @@ residuals and `y_dates` for time-aligned plots. All values are produced by
 
 ## Module 2: Forecasting Model Library
 
-Module 2 implements a unified forecasting model library, including Naive,
-DLinear, LSTM and Transformer forecasters. All models follow the same
-input-output contract, taking windowed ETT sequences with shape
-`[batch_size, input_len, num_features]` and producing multi-horizon OT forecasts
-with shape `[batch_size, horizon]`. Module 2 only defines the models; training,
-metrics and anomaly detection belong to later modules.
+Module 2 implements a unified forecasting model library spanning models of
+increasing capacity: Naive, Linear, DLinear, LSTM and Transformer forecasters.
+All models follow the same input-output contract, taking windowed ETT sequences
+with shape `[batch_size, input_len, num_features]` and producing multi-horizon OT
+forecasts with shape `[batch_size, horizon]`. Module 2 only defines the models;
+training, metrics and anomaly detection belong to later modules.
+
+The forecasting library compares models with increasing modelling assumptions
+and capacity: a non-parametric persistence baseline, a direct linear model, a
+decomposition-based linear model, a recurrent neural network, and an
+attention-based Transformer encoder. This supports the research question of
+whether attention-based models are consistently better than simpler linear and
+recurrent baselines for ETT oil-temperature forecasting (cf. Zeng et al., AAAI
+2023).
 
 ### Models
 
 | Model | File | Idea |
 | --- | --- | --- |
 | `naive` | `src/models/naive.py` | Repeat the last input OT value across the horizon (persistence sanity check, no training). |
-| `dlinear` | `src/models/dlinear.py` | Flatten the window and map it to the horizon with one linear layer (strong linear baseline; simple first version, not full trend/seasonal decomposition). |
+| `linear` | `src/models/linear.py` | Flatten the window and map it to the horizon with one linear layer (plain linear baseline). |
+| `dlinear` | `src/models/dlinear.py` | Decompose the window into trend (moving average) + seasonal, project each to the horizon with its own linear layer, and sum. |
 | `lstm` | `src/models/lstm.py` | LSTM encoder, last hidden state projected to the horizon. |
 | `transformer` | `src/models/transformer.py` | Input projection + sinusoidal positional encoding + self-attention encoder + pooling + linear head. Supports `forward(x, return_attention=True)` for exploratory RQ4 analysis. |
 
@@ -242,10 +252,12 @@ All models subclass `BaseForecaster` (`src/models/base.py`) and read
 resolves the OT column index from `feature_cols`, so it works for both
 univariate and multivariate inputs.
 
-> **Note on DLinear.** The current DLinear implementation is a simplified linear
-> baseline that maps flattened historical windows directly to multi-horizon
-> forecasts. A decomposition-based DLinear variant (trend/seasonal) may be added
-> later if required.
+> **Note on DLinear.** `DLinearForecaster` is a decomposition-based,
+> DLinear-inspired forecaster: it splits the input into trend and seasonal
+> components and projects each to the target horizon using the flattened
+> multivariate window (variant A, shared/flattened). It is not a full
+> reproduction of the original paper; a channel-independent variant could be
+> added later if required.
 
 ### Model factory and config
 
@@ -256,9 +268,14 @@ A `model` section selects the model and its hyper-parameters:
 model:
   name: naive
 
-# DLinear
+# Linear
+model:
+  name: linear
+
+# DLinear (decomposition)
 model:
   name: dlinear
+  kernel_size: 25   # moving-average window for trend extraction
 
 # LSTM
 model:

@@ -17,11 +17,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.models import (
     NaiveForecaster,
+    LinearForecaster,
     DLinearForecaster,
     LSTMForecaster,
     TransformerForecaster,
     build_model,
 )
+from src.models.dlinear import SeriesDecomposition, MovingAverage
 
 BATCH = 8
 INPUT_LEN = 96
@@ -43,10 +45,49 @@ def test_naive_shape(num_features):
 
 
 @pytest.mark.parametrize("num_features", [1, 7])
+def test_linear_shape(num_features):
+    model = LinearForecaster(INPUT_LEN, num_features, HORIZON)
+    out = model(_x(num_features))
+    assert out.shape == (BATCH, HORIZON)
+
+
+@pytest.mark.parametrize("num_features", [1, 7])
 def test_dlinear_shape(num_features):
     model = DLinearForecaster(INPUT_LEN, num_features, HORIZON)
     out = model(_x(num_features))
     assert out.shape == (BATCH, HORIZON)
+
+
+def test_dlinear_has_two_linear_components():
+    # Decomposition DLinear has a trend AND a seasonal linear head, so it holds
+    # roughly twice the parameters of the plain Linear baseline.
+    linear = LinearForecaster(INPUT_LEN, 7, HORIZON)
+    dlinear = DLinearForecaster(INPUT_LEN, 7, HORIZON)
+    n_linear = sum(p.numel() for p in linear.parameters())
+    n_dlinear = sum(p.numel() for p in dlinear.parameters())
+    assert n_dlinear == 2 * n_linear
+
+
+@pytest.mark.parametrize("kernel_size", [3, 25])
+def test_dlinear_kernel_configurable(kernel_size):
+    model = DLinearForecaster(INPUT_LEN, 7, HORIZON, kernel_size=kernel_size)
+    assert model.kernel_size == kernel_size
+    out = model(_x(7))
+    assert out.shape == (BATCH, HORIZON)
+
+
+def test_series_decomposition_reconstructs_input():
+    # seasonal + trend must reconstruct the original series, and a moving average
+    # of a constant series returns the constant (seasonal ~ 0).
+    decomp = SeriesDecomposition(kernel_size=25)
+    x = torch.randn(BATCH, INPUT_LEN, 7)
+    seasonal, trend = decomp(x)
+    assert seasonal.shape == x.shape and trend.shape == x.shape
+    assert torch.allclose(seasonal + trend, x, atol=1e-5)
+
+    const = torch.full((BATCH, INPUT_LEN, 7), 3.0)
+    smoothed = MovingAverage(25)(const)
+    assert torch.allclose(smoothed, const, atol=1e-5)
 
 
 @pytest.mark.parametrize("num_features", [1, 7])
@@ -106,7 +147,8 @@ def _config(model_section, num_features):
 
 @pytest.mark.parametrize("model_section", [
     {"name": "naive"},
-    {"name": "dlinear"},
+    {"name": "linear"},
+    {"name": "dlinear", "kernel_size": 25},
     {"name": "lstm", "hidden_dim": 32, "num_layers": 1, "dropout": 0.1},
     {"name": "transformer", "d_model": 32, "nhead": 4, "num_layers": 1},
 ])

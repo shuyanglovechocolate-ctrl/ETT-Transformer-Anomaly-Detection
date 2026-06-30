@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 
 from src.models.base import BaseForecaster
 from src.models.naive import NaiveForecaster
+from src.models.linear import LinearForecaster
 from src.models.dlinear import DLinearForecaster
 from src.models.lstm import LSTMForecaster
 from src.models.transformer import TransformerForecaster
@@ -51,11 +52,19 @@ def build_model(
             target_col=config["dataset"].get("target", "OT"),
         )
 
+    if name == "linear":
+        return LinearForecaster(
+            input_len=input_len,
+            num_features=num_features,
+            horizon=horizon,
+        )
+
     if name == "dlinear":
         return DLinearForecaster(
             input_len=input_len,
             num_features=num_features,
             horizon=horizon,
+            kernel_size=model_cfg.get("kernel_size", 25),
         )
 
     if name == "lstm":
@@ -83,5 +92,5 @@ def build_model(
 
     raise ValueError(
         f"Unknown model name: '{name}'. "
-        "Expected one of: naive, dlinear, lstm, transformer."
+        "Expected one of: naive, linear, dlinear, lstm, transformer."
     )

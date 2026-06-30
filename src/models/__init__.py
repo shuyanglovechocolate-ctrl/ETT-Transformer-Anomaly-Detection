@@ -7,6 +7,7 @@ All models share the contract:
 
 from src.models.base import BaseForecaster
 from src.models.naive import NaiveForecaster
+from src.models.linear import LinearForecaster
 from src.models.dlinear import DLinearForecaster
 from src.models.lstm import LSTMForecaster
 from src.models.transformer import TransformerForecaster
@@ -15,6 +16,7 @@ from src.models.factory import build_model
 __all__ = [
     "BaseForecaster",
     "NaiveForecaster",
+    "LinearForecaster",
     "DLinearForecaster",
     "LSTMForecaster",
     "TransformerForecaster",
