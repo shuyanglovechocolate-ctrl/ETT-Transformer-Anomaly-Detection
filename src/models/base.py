@@ -13,6 +13,9 @@ import torch.nn as nn
 class BaseForecaster(nn.Module):
     """Common interface for forecasting models.
 
+    Subclasses may override the metadata class attributes below; they are used
+    by ``get_model_summary`` and for experiment logging.
+
     Parameters
     ----------
     input_len : int
@@ -22,6 +25,13 @@ class BaseForecaster(nn.Module):
     horizon : int
         Number of future OT steps to predict.
     """
+
+    # Metadata defaults (override per model).
+    model_type: str = "base"
+    supports_attention: bool = False
+    supports_multivariate: bool = True
+    requires_feature_cols: bool = False
+    description: str = ""
 
     def __init__(self, input_len: int, num_features: int, horizon: int):
         super().__init__()

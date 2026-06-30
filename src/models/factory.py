@@ -11,11 +11,22 @@ from typing import Any, Dict, List
 from src.models.base import BaseForecaster
 from src.models.naive import NaiveForecaster
 from src.models.linear import LinearForecaster
+from src.models.nlinear import NLinearForecaster
 from src.models.dlinear import DLinearForecaster
 from src.models.lstm import LSTMForecaster
 from src.models.transformer import TransformerForecaster
 
-SUPPORTED_MODELS = ["naive", "linear", "dlinear", "lstm", "transformer"]
+# Single source of truth for supported model names -> classes.
+MODEL_REGISTRY = {
+    "naive": NaiveForecaster,
+    "linear": LinearForecaster,
+    "nlinear": NLinearForecaster,
+    "dlinear": DLinearForecaster,
+    "lstm": LSTMForecaster,
+    "transformer": TransformerForecaster,
+}
+
+SUPPORTED_MODELS = list(MODEL_REGISTRY)
 
 
 def validate_model_config(config: Dict[str, Any]) -> None:
@@ -44,6 +55,8 @@ def validate_model_config(config: Dict[str, Any]) -> None:
             raise ValueError("dlinear.kernel_size must be a positive integer.")
         if kernel_size % 2 == 0:
             raise ValueError("dlinear.kernel_size must be odd.")
+        if not isinstance(model_cfg.get("channel_independent", False), bool):
+            raise ValueError("dlinear.channel_independent must be a boolean.")
 
     if name == "lstm":
         if model_cfg.get("hidden_dim", 64) <= 0:
@@ -122,12 +135,22 @@ def build_model(
             horizon=horizon,
         )
 
+    if name == "nlinear":
+        return NLinearForecaster(
+            input_len=input_len,
+            num_features=num_features,
+            horizon=horizon,
+            feature_cols=feature_cols,
+            target_col=config["dataset"].get("target", "OT"),
+        )
+
     if name == "dlinear":
         return DLinearForecaster(
             input_len=input_len,
             num_features=num_features,
             horizon=horizon,
             kernel_size=model_cfg.get("kernel_size", 25),
+            channel_independent=model_cfg.get("channel_independent", False),
         )
 
     if name == "lstm":
@@ -155,5 +178,5 @@ def build_model(
 
     raise ValueError(
         f"Unknown model name: '{name}'. "
-        "Expected one of: naive, linear, dlinear, lstm, transformer."
+        f"Expected one of: {', '.join(SUPPORTED_MODELS)}."
     )

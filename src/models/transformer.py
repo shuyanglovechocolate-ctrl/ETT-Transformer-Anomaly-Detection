@@ -86,6 +86,10 @@ class TransformerForecaster(BaseForecaster):
         "last" (use the final time step) or "mean" (average over time).
     """
 
+    model_type = "attention"
+    supports_attention = True
+    description = "Encoder-only Transformer with positional encoding and pooling head."
+
     def __init__(
         self,
         input_len: int,

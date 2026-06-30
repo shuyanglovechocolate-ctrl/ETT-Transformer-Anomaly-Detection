@@ -13,6 +13,9 @@ import torch.nn as nn
 class LinearForecaster(BaseForecaster):
     """Flatten [B, L, F] -> Linear -> [B, horizon]."""
 
+    model_type = "linear"
+    description = "Direct linear baseline mapping the flattened window to the horizon."
+
     def __init__(self, input_len: int, num_features: int, horizon: int):
         super().__init__(input_len, num_features, horizon)
         self.flatten = nn.Flatten()

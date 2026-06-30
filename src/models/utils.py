@@ -58,4 +58,14 @@ def get_model_summary(
         if hasattr(model, attr):
             summary[attr] = getattr(model, attr)
 
+    for attr in (
+        "model_type",
+        "supports_attention",
+        "supports_multivariate",
+        "requires_feature_cols",
+        "description",
+    ):
+        if hasattr(model, attr):
+            summary[attr] = getattr(model, attr)
+
     return summary

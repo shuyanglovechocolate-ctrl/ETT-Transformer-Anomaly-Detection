@@ -29,6 +29,10 @@ class NaiveForecaster(BaseForecaster):
         Name of the target column, default "OT".
     """
 
+    model_type = "baseline"
+    requires_feature_cols = True
+    description = "Persistence baseline: repeat the last OT value over the horizon."
+
     def __init__(
         self,
         input_len: int,

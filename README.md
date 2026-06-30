@@ -136,10 +136,11 @@ src/
     base.py          # BaseForecaster
     naive.py         # Naive / persistence baseline
     linear.py        # plain linear baseline
-    dlinear.py       # decomposition-based DLinear (trend + seasonal)
+    nlinear.py       # NLinear-style baseline (last-value normalization)
+    dlinear.py       # decomposition-based DLinear (trend + seasonal, +channel-independent)
     lstm.py          # LSTM forecaster
     transformer.py   # Transformer forecaster + positional encoding
-    factory.py       # build_model() + validate_model_config()
+    factory.py       # build_model() + validate_model_config() + MODEL_REGISTRY
     utils.py         # count_parameters(), get_model_summary()
   utils/
     seed.py          # global random seed
@@ -224,19 +225,20 @@ residuals and `y_dates` for time-aligned plots. All values are produced by
 ## Module 2: Forecasting Model Library
 
 Module 2 implements a unified forecasting model library spanning models of
-increasing capacity: Naive, Linear, DLinear, LSTM and Transformer forecasters.
-All models follow the same input-output contract, taking windowed ETT sequences
-with shape `[batch_size, input_len, num_features]` and producing multi-horizon OT
-forecasts with shape `[batch_size, horizon]`. Module 2 only defines the models;
-training, metrics and anomaly detection belong to later modules.
+increasing capacity: Naive, Linear, NLinear, DLinear, LSTM and Transformer
+forecasters. All models follow the same input-output contract, taking windowed
+ETT sequences with shape `[batch_size, input_len, num_features]` and producing
+multi-horizon OT forecasts with shape `[batch_size, horizon]`. Module 2 only
+defines the models; training, metrics and anomaly detection belong to later
+modules.
 
 The forecasting library compares models with increasing modelling assumptions
-and capacity: a non-parametric persistence baseline, a direct linear model, a
-decomposition-based linear model, a recurrent neural network, and an
-attention-based Transformer encoder. This supports the research question of
-whether attention-based models are consistently better than simpler linear and
-recurrent baselines for ETT oil-temperature forecasting (cf. Zeng et al., AAAI
-2023).
+and capacity: a non-parametric persistence baseline, direct and normalized
+linear models, a decomposition-based linear model, a recurrent neural network,
+and an attention-based Transformer encoder. This supports the research question
+of whether attention-based models are consistently better than simpler linear
+and recurrent baselines for ETT oil-temperature forecasting (cf. Zeng et al.,
+AAAI 2023).
 
 ### Models
 
@@ -244,9 +246,15 @@ recurrent baselines for ETT oil-temperature forecasting (cf. Zeng et al., AAAI
 | --- | --- | --- |
 | `naive` | `src/models/naive.py` | Repeat the last input OT value across the horizon (persistence sanity check, no training). |
 | `linear` | `src/models/linear.py` | Flatten the window and map it to the horizon with one linear layer (plain linear baseline). |
-| `dlinear` | `src/models/dlinear.py` | Decompose the window into trend (moving average) + seasonal, project each to the horizon with its own linear layer, and sum. |
+| `nlinear` | `src/models/nlinear.py` | Subtract the last value, predict the change with a linear layer, add the last OT value back (NLinear-inspired, robust to level shifts). |
+| `dlinear` | `src/models/dlinear.py` | Decompose into trend (moving average) + seasonal and project each to the horizon. Channel-mixing by default; `channel_independent: true` uses per-channel temporal projection plus a linear mixing head. |
 | `lstm` | `src/models/lstm.py` | LSTM encoder, last hidden state projected to the horizon. |
 | `transformer` | `src/models/transformer.py` | Input projection + sinusoidal positional encoding + self-attention encoder + pooling + linear head. Supports `forward(x, return_attention=True)` for exploratory RQ4 analysis. |
+
+Models are registered in `MODEL_REGISTRY` (`src/models/factory.py`), the single
+source of truth for supported names. Each model also exposes metadata
+attributes (`model_type`, `supports_attention`, `supports_multivariate`,
+`requires_feature_cols`, `description`) surfaced by `get_model_summary()`.
 
 All models subclass `BaseForecaster` (`src/models/base.py`) and read
 `num_features` / `horizon` dynamically (never hard-coded). The Naive baseline
@@ -273,10 +281,15 @@ model:
 model:
   name: linear
 
+# NLinear
+model:
+  name: nlinear
+
 # DLinear (decomposition)
 model:
   name: dlinear
-  kernel_size: 25   # moving-average window for trend extraction
+  kernel_size: 25            # moving-average window for trend extraction
+  channel_independent: false # true -> per-channel temporal projection + mixing head
 
 # LSTM
 model:
@@ -312,11 +325,12 @@ summary = get_model_summary(model, model_name=config["model"]["name"])
 ### Model Configuration Contract
 
 Every model config must contain a `model.name` field. Supported names:
-`naive`, `linear`, `dlinear`, `lstm`, `transformer`. `build_model()` calls
-`validate_model_config()` first, so an invalid config fails at build time rather
-than mid-training. Model-specific rules:
+`naive`, `linear`, `nlinear`, `dlinear`, `lstm`, `transformer`. `build_model()`
+calls `validate_model_config()` first, so an invalid config fails at build time
+rather than mid-training. Model-specific rules:
 
-- **dlinear**: `kernel_size` must be a positive odd integer (default 25).
+- **dlinear**: `kernel_size` must be a positive odd integer (default 25);
+  `channel_independent` must be a boolean (default false).
 - **lstm**: `hidden_dim > 0`, `num_layers > 0`, `0 <= dropout < 1`
   (dropout has no effect when `num_layers == 1`).
 - **transformer**: `d_model > 0`, `nhead > 0`, `num_layers > 0`,

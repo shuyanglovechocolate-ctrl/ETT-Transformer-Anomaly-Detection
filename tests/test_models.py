@@ -18,6 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.models import (
     NaiveForecaster,
     LinearForecaster,
+    NLinearForecaster,
     DLinearForecaster,
     LSTMForecaster,
     TransformerForecaster,
@@ -25,6 +26,7 @@ from src.models import (
     validate_model_config,
     count_parameters,
     get_model_summary,
+    MODEL_REGISTRY,
 )
 from src.models.dlinear import SeriesDecomposition, MovingAverage
 
@@ -55,8 +57,39 @@ def test_linear_shape(num_features):
 
 
 @pytest.mark.parametrize("num_features", [1, 7])
+def test_nlinear_shape(num_features):
+    feature_cols = UNI_FEATURES if num_features == 1 else MULTI_FEATURES
+    model = NLinearForecaster(INPUT_LEN, num_features, HORIZON, feature_cols)
+    out = model(_x(num_features))
+    assert out.shape == (BATCH, HORIZON)
+
+
+def test_nlinear_is_shift_equivariant():
+    # The defining property of NLinear: subtracting then adding back the last
+    # value makes the forecast shift-equivariant, f(x + c) = f(x) + c, for any
+    # constant offset c, regardless of the learned weights.
+    model = NLinearForecaster(INPUT_LEN, 7, HORIZON, MULTI_FEATURES)
+    model.eval()
+    x = torch.randn(BATCH, INPUT_LEN, 7)
+    c = 3.0
+    with torch.no_grad():
+        out = model(x)
+        out_shifted = model(x + c)
+    assert torch.allclose(out_shifted, out + c, atol=1e-4)
+
+
+@pytest.mark.parametrize("num_features", [1, 7])
 def test_dlinear_shape(num_features):
     model = DLinearForecaster(INPUT_LEN, num_features, HORIZON)
+    out = model(_x(num_features))
+    assert out.shape == (BATCH, HORIZON)
+
+
+@pytest.mark.parametrize("num_features", [1, 7])
+def test_dlinear_channel_independent_shape(num_features):
+    model = DLinearForecaster(
+        INPUT_LEN, num_features, HORIZON, channel_independent=True
+    )
     out = model(_x(num_features))
     assert out.shape == (BATCH, HORIZON)
 
@@ -151,7 +184,9 @@ def _config(model_section, num_features):
 @pytest.mark.parametrize("model_section", [
     {"name": "naive"},
     {"name": "linear"},
+    {"name": "nlinear"},
     {"name": "dlinear", "kernel_size": 25},
+    {"name": "dlinear", "kernel_size": 25, "channel_independent": True},
     {"name": "lstm", "hidden_dim": 32, "num_layers": 1, "dropout": 0.1},
     {"name": "transformer", "d_model": 32, "nhead": 4, "num_layers": 1},
 ])
@@ -265,3 +300,36 @@ def test_build_model_invokes_validation():
     config = _config({"name": "transformer", "d_model": 64, "nhead": 5}, 7)
     with pytest.raises(ValueError):
         build_model(config, num_features=7, feature_cols=MULTI_FEATURES)
+
+
+# ---------------------------------------------------------------------------
+# Registry and model metadata
+# ---------------------------------------------------------------------------
+
+def test_model_registry_contents():
+    assert set(MODEL_REGISTRY) == {
+        "naive", "linear", "nlinear", "dlinear", "lstm", "transformer"
+    }
+
+
+def test_model_metadata_attributes():
+    transformer = TransformerForecaster(INPUT_LEN, 7, HORIZON)
+    assert transformer.model_type == "attention"
+    assert transformer.supports_attention is True
+
+    naive = NaiveForecaster(INPUT_LEN, 7, HORIZON, MULTI_FEATURES)
+    assert naive.model_type == "baseline"
+    assert naive.requires_feature_cols is True
+    assert naive.supports_attention is False
+
+    dlinear = DLinearForecaster(INPUT_LEN, 7, HORIZON)
+    assert dlinear.model_type == "linear"
+
+
+def test_get_model_summary_includes_metadata():
+    model = TransformerForecaster(INPUT_LEN, 7, HORIZON)
+    summary = get_model_summary(model, model_name="transformer")
+    assert summary["model_type"] == "attention"
+    assert summary["supports_attention"] is True
+    assert summary["supports_multivariate"] is True
+    assert "description" in summary

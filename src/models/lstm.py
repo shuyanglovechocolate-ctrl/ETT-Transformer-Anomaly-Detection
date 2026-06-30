@@ -24,6 +24,9 @@ class LSTMForecaster(BaseForecaster):
         Dropout between LSTM layers (only active when num_layers > 1).
     """
 
+    model_type = "recurrent"
+    description = "LSTM encoder with a linear head over the last hidden state."
+
     def __init__(
         self,
         input_len: int,

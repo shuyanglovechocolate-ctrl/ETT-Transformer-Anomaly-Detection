@@ -56,7 +56,16 @@ class SeriesDecomposition(nn.Module):
 
 
 class DLinearForecaster(BaseForecaster):
-    """Decomposition-based linear forecaster (variant A: flattened/shared).
+    """Decomposition-based linear forecaster.
+
+    Two channel-handling modes:
+
+    - ``channel_independent=False`` (default, variant A): trend and seasonal
+      components are flattened across all channels and each mapped to the
+      horizon by a shared linear layer (channel-mixing).
+    - ``channel_independent=True``: each channel is projected over time by its
+      own (independent) trend/seasonal weights, then a linear head mixes the
+      per-channel forecasts into the target horizon.
 
     Parameters
     ----------
@@ -64,7 +73,12 @@ class DLinearForecaster(BaseForecaster):
         Standard forecaster dimensions.
     kernel_size : int
         Moving-average window for trend extraction (odd recommended, default 25).
+    channel_independent : bool
+        Channel handling mode (see above).
     """
+
+    model_type = "linear"
+    description = "Decomposition-based DLinear-inspired forecaster (trend + seasonal)."
 
     def __init__(
         self,
@@ -72,20 +86,48 @@ class DLinearForecaster(BaseForecaster):
         num_features: int,
         horizon: int,
         kernel_size: int = 25,
+        channel_independent: bool = False,
     ):
         super().__init__(input_len, num_features, horizon)
         self.kernel_size = kernel_size
+        self.channel_independent = channel_independent
 
         self.decomposition = SeriesDecomposition(kernel_size)
-        self.flatten = nn.Flatten()
 
-        flat_dim = input_len * num_features
-        self.trend_linear = nn.Linear(flat_dim, horizon)
-        self.seasonal_linear = nn.Linear(flat_dim, horizon)
+        if channel_independent:
+            # Independent temporal projection per channel: weight [C, L, horizon].
+            self.seasonal_weight = nn.Parameter(
+                torch.empty(num_features, input_len, horizon)
+            )
+            self.trend_weight = nn.Parameter(
+                torch.empty(num_features, input_len, horizon)
+            )
+            self.seasonal_bias = nn.Parameter(torch.zeros(num_features, horizon))
+            self.trend_bias = nn.Parameter(torch.zeros(num_features, horizon))
+            nn.init.xavier_uniform_(self.seasonal_weight)
+            nn.init.xavier_uniform_(self.trend_weight)
+            # Mix per-channel forecasts into the single target horizon.
+            self.mix = nn.Linear(num_features * horizon, horizon)
+        else:
+            self.flatten = nn.Flatten()
+            flat_dim = input_len * num_features
+            self.trend_linear = nn.Linear(flat_dim, horizon)
+            self.seasonal_linear = nn.Linear(flat_dim, horizon)
 
     def forward(self, x):
         # x: [batch, input_len, num_features]
         seasonal, trend = self.decomposition(x)
+
+        if self.channel_independent:
+            s = seasonal.permute(0, 2, 1)   # [B, C, L]
+            t = trend.permute(0, 2, 1)
+            s_out = torch.einsum("bcl,clh->bch", s, self.seasonal_weight)
+            s_out = s_out + self.seasonal_bias
+            t_out = torch.einsum("bcl,clh->bch", t, self.trend_weight)
+            t_out = t_out + self.trend_bias
+            combined = s_out + t_out         # [B, C, horizon]
+            return self.mix(combined.flatten(1))  # [B, horizon]
+
         seasonal_out = self.seasonal_linear(self.flatten(seasonal))  # [B, horizon]
         trend_out = self.trend_linear(self.flatten(trend))            # [B, horizon]
         return seasonal_out + trend_out
