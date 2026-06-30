@@ -54,9 +54,12 @@ def build_config(name, input_type, input_len, horizon, seed):
         "training": {
             "batch_size": 64,
             "seed": seed,
-            "epochs": 10,
+            "epochs": 100,
             "learning_rate": 0.001,
             "weight_decay": 0.0,
+            "grad_clip": 1.0,
+            "early_stopping": {"patience": 10, "min_delta": 0.0},
+            "scheduler": {"name": "reduce_on_plateau", "factor": 0.5, "patience": 5},
         },
     }
 

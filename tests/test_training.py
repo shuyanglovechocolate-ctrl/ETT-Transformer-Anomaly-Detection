@@ -21,11 +21,14 @@ from src.data.dataset import create_dataloader
 from src.models import LinearForecaster, NaiveForecaster, count_parameters
 from src.training import (
     train_one_epoch,
+    fit_model,
+    build_scheduler,
     evaluate_loss,
     predict,
     create_prediction_dataframe,
     save_checkpoint,
     load_checkpoint,
+    EarlyStopping,
 )
 
 INPUT_LEN = 16
@@ -118,3 +121,89 @@ def test_naive_has_no_parameters_so_no_optimizer():
     # exactly why the training entry point gates on count_parameters > 0.
     with pytest.raises(ValueError):
         torch.optim.Adam(model.parameters(), lr=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# 5.2: early stopping, scheduler, fit_model history, grad clipping
+# ---------------------------------------------------------------------------
+
+def test_early_stopping_triggers_after_patience():
+    es = EarlyStopping(patience=3, mode="min")
+    assert es.step(1.0) is True          # first value -> best
+    for _ in range(2):                    # two non-improving
+        es.step(2.0)
+    assert es.should_stop is False
+    es.step(2.0)                          # third non-improving -> stop
+    assert es.should_stop is True
+    assert es.best_epoch == 1
+
+
+def test_early_stopping_resets_counter_on_improvement():
+    es = EarlyStopping(patience=2, mode="min")
+    es.step(1.0)
+    es.step(2.0)                          # counter = 1
+    assert es.counter == 1
+    assert es.step(0.5) is True           # improvement resets counter
+    assert es.counter == 0
+    assert es.best_epoch == 3
+
+
+def test_train_one_epoch_supports_grad_clip():
+    model = LinearForecaster(INPUT_LEN, NUM_FEATURES, HORIZON)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss = train_one_epoch(
+        model, _loader(), optimizer, nn.MSELoss(), DEVICE, grad_clip=1.0
+    )
+    assert np.isfinite(loss)
+
+
+def test_fit_model_returns_summary_and_saves_checkpoint(tmp_path):
+    torch.manual_seed(0)
+    model = LinearForecaster(INPUT_LEN, NUM_FEATURES, HORIZON)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    ckpt = tmp_path / "best.pt"
+    history = fit_model(
+        model, _loader(), _loader(), optimizer, nn.MSELoss(), DEVICE,
+        epochs=3, checkpoint_path=str(ckpt), early_stopping_patience=5,
+    )
+    for key in ("best_epoch", "best_val_loss", "stopped_early", "epochs_ran"):
+        assert key in history
+    assert history["epochs_ran"] == 3
+    assert ckpt.exists()
+    # Best checkpoint can be reloaded and used for prediction.
+    model2 = LinearForecaster(INPUT_LEN, NUM_FEATURES, HORIZON)
+    load_checkpoint(model2, str(ckpt))
+    y_true, y_pred = predict(model2, _loader(), DEVICE)
+    assert y_pred.shape == (N, HORIZON)
+
+
+def test_fit_model_stops_early_with_tiny_patience(tmp_path):
+    torch.manual_seed(0)
+    model = LinearForecaster(INPUT_LEN, NUM_FEATURES, HORIZON)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-9)  # ~no improvement
+    history = fit_model(
+        model, _loader(), _loader(), optimizer, nn.MSELoss(), DEVICE,
+        epochs=50, checkpoint_path=str(tmp_path / "b.pt"),
+        early_stopping_patience=2,
+    )
+    assert history["epochs_ran"] < 50
+
+
+def test_build_scheduler_none_when_absent():
+    model = LinearForecaster(INPUT_LEN, NUM_FEATURES, HORIZON)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    assert build_scheduler(optimizer, {"training": {}}) is None
+
+
+def test_build_and_run_reduce_on_plateau():
+    model = LinearForecaster(INPUT_LEN, NUM_FEATURES, HORIZON)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    config = {"training": {"scheduler": {"name": "reduce_on_plateau",
+                                         "factor": 0.5, "patience": 1}}}
+    scheduler = build_scheduler(optimizer, config)
+    assert scheduler is not None
+    history = fit_model(
+        model, _loader(), _loader(), optimizer, nn.MSELoss(), DEVICE,
+        epochs=2, scheduler=scheduler,
+    )
+    assert history["epochs_ran"] == 2

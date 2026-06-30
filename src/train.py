@@ -29,11 +29,13 @@ from src.data.pipeline import build_data_pipeline
 from src.models import build_model, validate_model_config, count_parameters, get_model_summary
 from src.training import (
     fit_model,
+    build_scheduler,
     compute_metrics,
     predict,
     create_prediction_dataframe,
     save_loss_curve,
     save_prediction_plot,
+    load_checkpoint,
 )
 
 
@@ -47,11 +49,19 @@ def experiment_name(config: dict) -> str:
     )
 
 
-def run(config: dict, project_root: str, epochs_override: int = None) -> dict:
+def run(
+    config: dict,
+    project_root: str,
+    epochs_override: int = None,
+    lr_override: float = None,
+    patience_override: int = None,
+    grad_clip_override: float = None,
+) -> dict:
     validate_config(config, project_root=project_root)
     validate_model_config(config)
 
-    seed = config["training"]["seed"]
+    train_cfg = config["training"]
+    seed = train_cfg["seed"]
     set_seed(seed)
     device = get_device()
     print(f"Using device: {device}")
@@ -70,18 +80,24 @@ def run(config: dict, project_root: str, epochs_override: int = None) -> dict:
     results = os.path.join(project_root, "results")
     ckpt_path = os.path.join(results, "checkpoints", f"{name}_best.pt")
 
-    epochs = epochs_override if epochs_override is not None else config["training"].get("epochs", 10)
-    criterion = nn.MSELoss()
+    epochs = epochs_override if epochs_override is not None else train_cfg.get("epochs", 10)
+    lr = lr_override if lr_override is not None else train_cfg.get("learning_rate", 1e-3)
+    grad_clip = grad_clip_override if grad_clip_override is not None else train_cfg.get("grad_clip")
+    es_cfg = train_cfg.get("early_stopping", {})
+    patience = patience_override if patience_override is not None else es_cfg.get("patience", 10)
+    min_delta = es_cfg.get("min_delta", 0.0)
 
+    criterion = nn.MSELoss()
     is_trainable = count_parameters(model) > 0
-    history = {"train_loss": [], "val_loss": []}
+    history = {"train_loss": [], "val_loss": [], "learning_rates": []}
 
     if is_trainable:
         optimizer = torch.optim.Adam(
             model.parameters(),
-            lr=config["training"].get("learning_rate", 1e-3),
-            weight_decay=config["training"].get("weight_decay", 0.0),
+            lr=lr,
+            weight_decay=train_cfg.get("weight_decay", 0.0),
         )
+        scheduler = build_scheduler(optimizer, config)
         history = fit_model(
             model,
             data["train_loader"],
@@ -92,7 +108,16 @@ def run(config: dict, project_root: str, epochs_override: int = None) -> dict:
             epochs=epochs,
             checkpoint_path=ckpt_path,
             config=config,
+            grad_clip=grad_clip,
+            scheduler=scheduler,
+            early_stopping_patience=patience,
+            early_stopping_min_delta=min_delta,
         )
+        # Restore the best (validation) weights before testing.
+        if os.path.exists(ckpt_path):
+            load_checkpoint(model, ckpt_path)
+            model.to(device)
+            print(f"Loaded best checkpoint (epoch {history.get('best_epoch')}).")
     else:
         print(f"{config['model']['name']} has no parameters; skipping training.")
 
@@ -101,18 +126,33 @@ def run(config: dict, project_root: str, epochs_override: int = None) -> dict:
     metrics = compute_metrics(y_true_scaled, y_pred_scaled, data["scaler_y"])
     print("Test metrics (original OT scale):", metrics)
 
-    # Save metrics JSON (with model summary + config snapshot).
+    training_summary = {
+        "epochs_requested": epochs,
+        "epochs_ran": history.get("epochs_ran", len(history["train_loss"])),
+        "best_epoch": history.get("best_epoch"),
+        "best_val_loss": history.get("best_val_loss"),
+        "stopped_early": history.get("stopped_early", False),
+        "seed": seed,
+    }
+
+    # Save metrics JSON (metrics + training summary + model summary + config).
     metrics_record = {
         "experiment": name,
         "metrics": metrics,
+        "training": training_summary,
         "model_summary": summary,
-        "epochs_trained": len(history["train_loss"]),
         "config": config,
     }
     metrics_path = os.path.join(results, "metrics", f"{name}_metrics.json")
     os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
     with open(metrics_path, "w", encoding="utf-8") as f:
         json.dump(metrics_record, f, indent=2, default=str)
+
+    # Save full training history JSON (gitignored logs/).
+    history_path = os.path.join(results, "logs", f"{name}_history.json")
+    os.makedirs(os.path.dirname(history_path), exist_ok=True)
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, default=str)
 
     # Save predictions CSV (long format, original scale, overlap preserved).
     df = create_prediction_dataframe(
@@ -137,10 +177,23 @@ def main():
     parser.add_argument("--config", required=True, help="Path to a YAML config.")
     parser.add_argument("--epochs", type=int, default=None,
                         help="Override training epochs (e.g. 1 for a smoke test).")
+    parser.add_argument("--lr", type=float, default=None,
+                        help="Override the learning rate.")
+    parser.add_argument("--patience", type=int, default=None,
+                        help="Override early-stopping patience.")
+    parser.add_argument("--grad-clip", type=float, default=None,
+                        help="Override gradient-clipping max norm.")
     args = parser.parse_args()
 
     config = load_config(args.config)
-    run(config, project_root=str(PROJECT_ROOT), epochs_override=args.epochs)
+    run(
+        config,
+        project_root=str(PROJECT_ROOT),
+        epochs_override=args.epochs,
+        lr_override=args.lr,
+        patience_override=args.patience,
+        grad_clip_override=args.grad_clip,
+    )
 
 
 if __name__ == "__main__":
