@@ -11,7 +11,8 @@ from src.models.linear import LinearForecaster
 from src.models.dlinear import DLinearForecaster
 from src.models.lstm import LSTMForecaster
 from src.models.transformer import TransformerForecaster
-from src.models.factory import build_model
+from src.models.factory import build_model, validate_model_config
+from src.models.utils import count_parameters, get_model_summary
 
 __all__ = [
     "BaseForecaster",
@@ -21,4 +22,7 @@ __all__ = [
     "LSTMForecaster",
     "TransformerForecaster",
     "build_model",
+    "validate_model_config",
+    "count_parameters",
+    "get_model_summary",
 ]

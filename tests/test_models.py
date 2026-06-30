@@ -22,6 +22,9 @@ from src.models import (
     LSTMForecaster,
     TransformerForecaster,
     build_model,
+    validate_model_config,
+    count_parameters,
+    get_model_summary,
 )
 from src.models.dlinear import SeriesDecomposition, MovingAverage
 
@@ -163,5 +166,102 @@ def test_build_model_factory(model_section):
 
 def test_build_model_unknown_raises():
     config = _config({"name": "bogus"}, 7)
+    with pytest.raises(ValueError):
+        build_model(config, num_features=7, feature_cols=MULTI_FEATURES)
+
+
+# ---------------------------------------------------------------------------
+# Model utilities
+# ---------------------------------------------------------------------------
+
+def test_count_parameters_naive_is_zero():
+    model = NaiveForecaster(INPUT_LEN, 7, HORIZON, MULTI_FEATURES)
+    assert count_parameters(model) == 0
+    assert count_parameters(model, trainable_only=False) == 0
+
+
+def test_count_parameters_nonzero_for_linear():
+    model = LinearForecaster(INPUT_LEN, 7, HORIZON)
+    expected = (INPUT_LEN * 7 + 1) * HORIZON  # weights + bias
+    assert count_parameters(model) == expected
+
+
+def test_get_model_summary_fields():
+    model = DLinearForecaster(INPUT_LEN, 7, HORIZON)
+    summary = get_model_summary(model, model_name="dlinear")
+    assert summary["model_name"] == "dlinear"
+    assert summary["class_name"] == "DLinearForecaster"
+    assert summary["total_parameters"] == count_parameters(model, trainable_only=False)
+    assert summary["trainable_parameters"] == count_parameters(model)
+    assert summary["input_len"] == INPUT_LEN
+    assert summary["num_features"] == 7
+    assert summary["horizon"] == HORIZON
+
+
+# ---------------------------------------------------------------------------
+# Model config validation
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("model_section", [
+    {"name": "naive"},
+    {"name": "linear"},
+    {"name": "dlinear", "kernel_size": 25},
+    {"name": "lstm", "hidden_dim": 64, "num_layers": 2, "dropout": 0.2},
+    {"name": "transformer", "d_model": 64, "nhead": 4, "pooling": "mean"},
+])
+def test_validate_model_config_accepts_valid(model_section):
+    validate_model_config(_config(model_section, 7))  # should not raise
+
+
+def test_validate_missing_model_section():
+    config = _config({"name": "linear"}, 7)
+    del config["model"]
+    with pytest.raises(ValueError):
+        validate_model_config(config)
+
+
+def test_validate_missing_model_name():
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"kernel_size": 25}, 7))
+
+
+def test_validate_unknown_model_name():
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"name": "bogus"}, 7))
+
+
+def test_validate_dlinear_even_kernel_raises():
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"name": "dlinear", "kernel_size": 24}, 7))
+
+
+def test_validate_lstm_bad_hidden_dim_raises():
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"name": "lstm", "hidden_dim": 0}, 7))
+
+
+def test_validate_lstm_bad_dropout_raises():
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"name": "lstm", "dropout": 1.0}, 7))
+
+
+def test_validate_transformer_bad_d_model_nhead_raises():
+    with pytest.raises(ValueError):
+        validate_model_config(
+            _config({"name": "transformer", "d_model": 64, "nhead": 5}, 7)
+        )
+
+
+def test_validate_transformer_bad_pooling_raises():
+    with pytest.raises(ValueError):
+        validate_model_config(
+            _config({"name": "transformer", "pooling": "sum"}, 7)
+        )
+
+
+def test_build_model_invokes_validation():
+    # An invalid model config must fail in build_model (via validate_model_config),
+    # not silently build something wrong.
+    config = _config({"name": "transformer", "d_model": 64, "nhead": 5}, 7)
     with pytest.raises(ValueError):
         build_model(config, num_features=7, feature_cols=MULTI_FEATURES)

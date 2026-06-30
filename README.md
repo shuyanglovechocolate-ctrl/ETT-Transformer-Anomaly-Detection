@@ -139,7 +139,8 @@ src/
     dlinear.py       # decomposition-based DLinear (trend + seasonal)
     lstm.py          # LSTM forecaster
     transformer.py   # Transformer forecaster + positional encoding
-    factory.py       # build_model() from config
+    factory.py       # build_model() + validate_model_config()
+    utils.py         # count_parameters(), get_model_summary()
   utils/
     seed.py          # global random seed
     device.py        # CPU / CUDA / MPS selection
@@ -298,14 +299,35 @@ model:
 Module 3 builds any model in one call:
 
 ```python
-from src.models import build_model
+from src.models import build_model, get_model_summary
 
 model = build_model(config, num_features=data["num_features"],
                     feature_cols=data["feature_cols"])
 y_pred = model(x)   # [batch_size, input_len, num_features] -> [batch_size, horizon]
+summary = get_model_summary(model, model_name=config["model"]["name"])
+# -> {"model_name", "class_name", "total_parameters", "trainable_parameters",
+#     "input_len", "num_features", "horizon"}
 ```
 
-Forward-shape and factory tests live in `tests/test_models.py`.
+### Model Configuration Contract
+
+Every model config must contain a `model.name` field. Supported names:
+`naive`, `linear`, `dlinear`, `lstm`, `transformer`. `build_model()` calls
+`validate_model_config()` first, so an invalid config fails at build time rather
+than mid-training. Model-specific rules:
+
+- **dlinear**: `kernel_size` must be a positive odd integer (default 25).
+- **lstm**: `hidden_dim > 0`, `num_layers > 0`, `0 <= dropout < 1`
+  (dropout has no effect when `num_layers == 1`).
+- **transformer**: `d_model > 0`, `nhead > 0`, `num_layers > 0`,
+  `dim_feedforward > 0`, `0 <= dropout < 1`, `d_model % nhead == 0`,
+  `pooling in {"last", "mean"}`.
+
+`get_model_summary(model)` returns a serialisable dict (parameter counts +
+dimensions) for Module 3 experiment logs.
+
+Model utilities, forward-shape, factory and config-validation tests live in
+`tests/test_models.py`.
 
 ## Setup
 
