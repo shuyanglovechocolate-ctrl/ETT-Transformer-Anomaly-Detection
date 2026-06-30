@@ -132,6 +132,13 @@ src/
     preprocessing.py # scaler_x / scaler_y, feature selection, inverse transform
     dataset.py       # sliding windows (with y_dates), ETTDataset, DataLoaders
     pipeline.py      # build_data_pipeline(): unified entry + metadata
+  models/
+    base.py          # BaseForecaster
+    naive.py         # Naive / persistence baseline
+    dlinear.py       # linear baseline (DLinear-style)
+    lstm.py          # LSTM forecaster
+    transformer.py   # Transformer forecaster + positional encoding
+    factory.py       # build_model() from config
   utils/
     seed.py          # global random seed
     device.py        # CPU / CUDA / MPS selection
@@ -211,6 +218,72 @@ Module 2 (models) reads `num_features` and `horizon`; Module 3 (training) reads
 the three DataLoaders; Modules 3/4 use `scaler_y` for original-scale MAE / RMSE /
 residuals and `y_dates` for time-aligned plots. All values are produced by
 `build_data_pipeline(config)`.
+
+## Module 2: Forecasting Model Library
+
+Module 2 implements a unified forecasting model library, including Naive,
+DLinear, LSTM and Transformer forecasters. All models follow the same
+input-output contract, taking windowed ETT sequences with shape
+`[batch_size, input_len, num_features]` and producing multi-horizon OT forecasts
+with shape `[batch_size, horizon]`. Module 2 only defines the models; training,
+metrics and anomaly detection belong to later modules.
+
+### Models
+
+| Model | File | Idea |
+| --- | --- | --- |
+| `naive` | `src/models/naive.py` | Repeat the last input OT value across the horizon (persistence sanity check, no training). |
+| `dlinear` | `src/models/dlinear.py` | Flatten the window and map it to the horizon with one linear layer (strong linear baseline; simple first version, not full trend/seasonal decomposition). |
+| `lstm` | `src/models/lstm.py` | LSTM encoder, last hidden state projected to the horizon. |
+| `transformer` | `src/models/transformer.py` | Input projection + sinusoidal positional encoding + self-attention encoder + pooling + linear head. Supports `forward(x, return_attention=True)` for exploratory RQ4 analysis. |
+
+All models subclass `BaseForecaster` (`src/models/base.py`) and read
+`num_features` / `horizon` dynamically (never hard-coded). The Naive baseline
+resolves the OT column index from `feature_cols`, so it works for both
+univariate and multivariate inputs.
+
+### Model factory and config
+
+A `model` section selects the model and its hyper-parameters:
+
+```yaml
+# Naive
+model:
+  name: naive
+
+# DLinear
+model:
+  name: dlinear
+
+# LSTM
+model:
+  name: lstm
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.2
+
+# Transformer
+model:
+  name: transformer
+  d_model: 64       # must be divisible by nhead
+  nhead: 4
+  num_layers: 2
+  dim_feedforward: 128
+  dropout: 0.1
+  pooling: last     # "last" or "mean"
+```
+
+Module 3 builds any model in one call:
+
+```python
+from src.models import build_model
+
+model = build_model(config, num_features=data["num_features"],
+                    feature_cols=data["feature_cols"])
+y_pred = model(x)   # [batch_size, input_len, num_features] -> [batch_size, horizon]
+```
+
+Forward-shape and factory tests live in `tests/test_models.py`.
 
 ## Setup
 

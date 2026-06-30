@@ -16,3 +16,9 @@ window:
 training:
   batch_size: 64
   seed: 42
+
+model:
+  name: lstm
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.2
