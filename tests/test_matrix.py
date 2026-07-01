@@ -15,6 +15,7 @@ from experiments.run_matrix import (
     build_matrix_config,
     build_core_light_matrix,
     build_core_deep_matrix,
+    build_robustness_deep_matrix,
     build_matrix_configs,
     get_default_model_config,
     experiment_exists,
@@ -153,12 +154,37 @@ def test_core_light_filters():
 
 
 def test_build_matrix_configs_dispatch_and_validate():
-    for matrix, expected in [("pilot", 6), ("core-light", 144), ("core-deep", 36)]:
+    for matrix, expected in [("pilot", 6), ("core-light", 144),
+                             ("core-deep", 36), ("robustness-deep", 12)]:
         configs = build_matrix_configs(matrix)
         assert len(configs) == expected
     # A sample of core configs must pass model validation.
     for config in build_core_light_matrix(datasets=["ETTh2"], horizons=[48], seeds=[42]):
         validate_model_config(config)
+
+
+def test_robustness_deep_matrix_regularized():
+    configs = build_robustness_deep_matrix()
+    assert len(configs) == 12  # 2 datasets x 1 horizon x 3 seeds x 2 models
+    for c in configs:
+        assert c["window"]["horizon"] == 96
+        assert c["dataset"]["input_type"] == "multivariate"
+        assert c["experiment"]["tag"] == "regularized"
+        assert c["training"]["weight_decay"] == 1e-4
+        validate_model_config(c)
+    # Regularization actually applied.
+    tr = [c for c in configs if c["model"]["name"] == "transformer"][0]
+    assert tr["training"]["learning_rate"] == 1e-4
+    assert tr["model"]["dropout"] == 0.2
+    lstm = [c for c in configs if c["model"]["name"] == "lstm"][0]
+    assert lstm["model"]["dropout"] == 0.3
+
+
+def test_experiment_id_includes_regularized_tag():
+    config = build_robustness_deep_matrix(
+        datasets=["ETTh1"], seeds=[42], models=["transformer"])[0]
+    assert build_experiment_id(config) == \
+        "ETTh1_transformer_regularized_multivariate_len96_h96_seed42"
 
 
 def test_run_matrix_fail_soft(tmp_path):

@@ -42,20 +42,31 @@ EXPERIMENT_LOG_COLUMNS = [
 ]
 
 
+def build_model_label(config: dict) -> str:
+    """Model label used in experiment ids and result tables.
+
+    Adds a ``_ci`` marker for channel-independent DLinear and an optional
+    ``_{tag}`` from config['experiment']['tag'] (e.g. 'regularized'), so tagged
+    variants stay distinct from the base model in the experiment log.
+    """
+    name = config["model"]["name"]
+    if name == "dlinear" and config["model"].get("channel_independent"):
+        name = f"{name}_ci"
+    tag = config.get("experiment", {}).get("tag")
+    if tag:
+        name = f"{name}_{tag}"
+    return name
+
+
 def build_experiment_id(config: dict) -> str:
     """Build a stable experiment id from the config.
 
-    Format: {dataset}_{model}[_ci]_{input_type}_len{input_len}_h{horizon}_seed{seed}
-    The ``_ci`` marker is added for channel-independent DLinear.
+    Format: {dataset}_{model_label}_{input_type}_len{input_len}_h{horizon}_seed{seed}
     """
     d = config["dataset"]
     w = config["window"]
-    model = config["model"]["name"]
-    suffix = ""
-    if model == "dlinear" and config["model"].get("channel_independent"):
-        suffix = "_ci"
     return (
-        f"{d['name']}_{model}{suffix}_{d['input_type']}"
+        f"{d['name']}_{build_model_label(config)}_{d['input_type']}"
         f"_len{w['input_len']}_h{w['horizon']}_seed{config['training']['seed']}"
     )
 
@@ -114,7 +125,7 @@ def build_experiment_log_row(
         "timestamp": timestamp,
         "experiment_id": metrics_record["experiment_id"],
         "dataset": ds["name"],
-        "model": mod.get("model_name"),
+        "model": mod.get("label", mod.get("model_name")),
         "model_type": mod.get("model_type"),
         "input_type": ds["input_type"],
         "input_len": ds["input_len"],
@@ -188,6 +199,8 @@ def run_experiment_from_config(
         config, num_features=data["num_features"], feature_cols=data["feature_cols"]
     ).to(device)
     summary = get_model_summary(model, model_name=config["model"]["name"])
+    # Label used for result grouping (base name + optional _ci / _tag).
+    summary["label"] = build_model_label(config)
 
     epochs = train_cfg.get("epochs", 10)
     grad_clip = train_cfg.get("grad_clip")

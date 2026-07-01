@@ -52,6 +52,20 @@ CORE_HORIZONS = [24, 48, 96]
 CORE_SEEDS = [42, 2024, 3407]
 CORE_INPUT_LEN = 96
 
+# Robustness check: regularized deep models on the longest horizon.
+ROBUSTNESS_DEEP_MODELS = ["lstm", "transformer"]
+REGULARIZED_MODEL_CONFIGS = {
+    "lstm": {"name": "lstm", "hidden_dim": 64, "num_layers": 2, "dropout": 0.3},
+    "transformer": {
+        "name": "transformer", "d_model": 64, "nhead": 4, "num_layers": 2,
+        "dim_feedforward": 128, "dropout": 0.2, "pooling": "last",
+    },
+}
+REGULARIZED_TRAINING = {
+    "lstm": {"learning_rate": 0.001, "weight_decay": 0.0001},
+    "transformer": {"learning_rate": 0.0001, "weight_decay": 0.0001},
+}
+
 
 def get_default_model_config(model_name: str) -> dict:
     """Return a fresh model config (name + sensible default hyper-parameters)."""
@@ -145,6 +159,34 @@ def build_core_deep_matrix(datasets=None, input_types=None, horizons=None,
     )
 
 
+def build_regularized_config(dataset, horizon, seed, model_name) -> dict:
+    """Build a regularized deep-model config, tagged 'regularized'."""
+    config = build_matrix_config(dataset, "multivariate", CORE_INPUT_LEN,
+                                 horizon, seed, model_name)
+    config["model"] = dict(REGULARIZED_MODEL_CONFIGS[model_name])
+    reg = REGULARIZED_TRAINING[model_name]
+    config["training"]["learning_rate"] = reg["learning_rate"]
+    config["training"]["weight_decay"] = reg["weight_decay"]
+    config["experiment"] = {"tag": "regularized"}
+    return config
+
+
+def build_robustness_deep_matrix(datasets=None, horizons=None, seeds=None,
+                                 models=None) -> list:
+    """Regularized deep models on the longest horizon (default 2 x 1 x 3 x 2 = 12)."""
+    datasets = datasets or CORE_DATASETS
+    horizons = horizons or [96]
+    seeds = seeds or CORE_SEEDS
+    models = models or ROBUSTNESS_DEEP_MODELS
+    return [
+        build_regularized_config(dataset, horizon, seed, model)
+        for dataset in datasets
+        for horizon in horizons
+        for seed in seeds
+        for model in models
+    ]
+
+
 def build_matrix_configs(matrix, datasets=None, input_types=None, horizons=None,
                          seeds=None, models=None) -> list:
     """Dispatch to the requested matrix builder."""
@@ -154,6 +196,8 @@ def build_matrix_configs(matrix, datasets=None, input_types=None, horizons=None,
         return build_core_light_matrix(datasets, input_types, horizons, seeds, models)
     if matrix == "core-deep":
         return build_core_deep_matrix(datasets, input_types, horizons, seeds, models)
+    if matrix == "robustness-deep":
+        return build_robustness_deep_matrix(datasets, horizons, seeds, models)
     raise ValueError(f"Unknown matrix '{matrix}'.")
 
 
@@ -235,7 +279,8 @@ def run_matrix(
 
 def main():
     parser = argparse.ArgumentParser(description="Run a batch experiment matrix.")
-    parser.add_argument("--matrix", choices=["pilot", "core-light", "core-deep"],
+    parser.add_argument("--matrix",
+                        choices=["pilot", "core-light", "core-deep", "robustness-deep"],
                         default="pilot", help="Which matrix to run.")
     parser.add_argument("--models", nargs="+", default=None,
                         choices=PILOT_MODELS, help="Subset of models to run.")
