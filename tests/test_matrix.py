@@ -13,6 +13,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from experiments.run_matrix import (
     build_pilot_matrix,
     build_matrix_config,
+    build_core_light_matrix,
+    build_core_deep_matrix,
+    build_matrix_configs,
     get_default_model_config,
     experiment_exists,
     run_matrix,
@@ -83,6 +86,37 @@ def test_run_matrix_skips_existing(tmp_path):
                          results_dir=str(tmp_path), skip_existing=True)
     assert summary["skipped"] == [eid]
     assert summary["succeeded"] == []
+
+
+def test_build_core_light_default_144():
+    configs = build_core_light_matrix()
+    assert len(configs) == 144  # 4 models x 2 datasets x 2 input_types x 3 horizons x 3 seeds
+
+
+def test_build_core_deep_default_36_multivariate_only():
+    configs = build_core_deep_matrix()
+    assert len(configs) == 36  # 2 x 2 datasets x 1 input_type x 3 horizons x 3 seeds
+    assert all(c["dataset"]["input_type"] == "multivariate" for c in configs)
+    assert set(c["model"]["name"] for c in configs) == {"lstm", "transformer"}
+
+
+def test_core_light_filters():
+    configs = build_core_light_matrix(
+        datasets=["ETTh1"], input_types=["multivariate"],
+        horizons=[24], seeds=[42], models=["naive", "linear"],
+    )
+    assert len(configs) == 2
+    assert all(c["dataset"]["name"] == "ETTh1" for c in configs)
+    assert all(c["window"]["horizon"] == 24 for c in configs)
+
+
+def test_build_matrix_configs_dispatch_and_validate():
+    for matrix, expected in [("pilot", 6), ("core-light", 144), ("core-deep", 36)]:
+        configs = build_matrix_configs(matrix)
+        assert len(configs) == expected
+    # A sample of core configs must pass model validation.
+    for config in build_core_light_matrix(datasets=["ETTh2"], horizons=[48], seeds=[42]):
+        validate_model_config(config)
 
 
 def test_run_matrix_fail_soft(tmp_path):

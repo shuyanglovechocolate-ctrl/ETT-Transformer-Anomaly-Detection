@@ -42,6 +42,15 @@ PILOT_DEFAULTS = {
     "seed": 42,
 }
 
+# Core matrix defaults.
+CORE_LIGHT_MODELS = ["naive", "linear", "nlinear", "dlinear"]
+CORE_DEEP_MODELS = ["lstm", "transformer"]
+CORE_DATASETS = ["ETTh1", "ETTh2"]
+CORE_INPUT_TYPES = ["univariate", "multivariate"]
+CORE_HORIZONS = [24, 48, 96]
+CORE_SEEDS = [42, 2024, 3407]
+CORE_INPUT_LEN = 96
+
 
 def get_default_model_config(model_name: str) -> dict:
     """Return a fresh model config (name + sensible default hyper-parameters)."""
@@ -99,6 +108,54 @@ def build_pilot_matrix(models=None) -> list:
     ]
 
 
+def build_matrix(models, datasets, input_types, horizons, seeds, input_len=CORE_INPUT_LEN) -> list:
+    """Build the full cartesian product of experiment configs."""
+    return [
+        build_matrix_config(dataset, input_type, input_len, horizon, seed, model)
+        for dataset in datasets
+        for input_type in input_types
+        for horizon in horizons
+        for seed in seeds
+        for model in models
+    ]
+
+
+def build_core_light_matrix(datasets=None, input_types=None, horizons=None,
+                            seeds=None, models=None) -> list:
+    """Light-model core matrix (default 4 x 2 x 2 x 3 x 3 = 144 runs)."""
+    return build_matrix(
+        models or CORE_LIGHT_MODELS,
+        datasets or CORE_DATASETS,
+        input_types or CORE_INPUT_TYPES,
+        horizons or CORE_HORIZONS,
+        seeds or CORE_SEEDS,
+    )
+
+
+def build_core_deep_matrix(datasets=None, input_types=None, horizons=None,
+                           seeds=None, models=None) -> list:
+    """Deep-model core matrix (default multivariate only, 2 x 2 x 1 x 3 x 3 = 36 runs)."""
+    return build_matrix(
+        models or CORE_DEEP_MODELS,
+        datasets or CORE_DATASETS,
+        input_types or ["multivariate"],
+        horizons or CORE_HORIZONS,
+        seeds or CORE_SEEDS,
+    )
+
+
+def build_matrix_configs(matrix, datasets=None, input_types=None, horizons=None,
+                         seeds=None, models=None) -> list:
+    """Dispatch to the requested matrix builder."""
+    if matrix == "pilot":
+        return build_pilot_matrix(models=models)
+    if matrix == "core-light":
+        return build_core_light_matrix(datasets, input_types, horizons, seeds, models)
+    if matrix == "core-deep":
+        return build_core_deep_matrix(datasets, input_types, horizons, seeds, models)
+    raise ValueError(f"Unknown matrix '{matrix}'.")
+
+
 def experiment_exists(config: dict, results_dir: str) -> bool:
     """True if this experiment's metrics JSON already exists."""
     eid = build_experiment_id(config)
@@ -152,12 +209,21 @@ def run_matrix(
 
 def main():
     parser = argparse.ArgumentParser(description="Run a batch experiment matrix.")
-    parser.add_argument("--matrix", choices=["pilot"], default="pilot",
-                        help="Which matrix to run (currently only 'pilot').")
+    parser.add_argument("--matrix", choices=["pilot", "core-light", "core-deep"],
+                        default="pilot", help="Which matrix to run.")
     parser.add_argument("--models", nargs="+", default=None,
                         choices=PILOT_MODELS, help="Subset of models to run.")
+    parser.add_argument("--datasets", nargs="+", default=None,
+                        choices=list(DATASET_PATHS), help="Subset of datasets.")
+    parser.add_argument("--input-types", nargs="+", default=None,
+                        choices=["univariate", "multivariate"], help="Input types.")
+    parser.add_argument("--horizons", nargs="+", type=int, default=None,
+                        help="Forecast horizons.")
+    parser.add_argument("--seeds", nargs="+", type=int, default=None, help="Seeds.")
     parser.add_argument("--epochs", type=int, default=None,
                         help="Override training epochs for all runs.")
+    parser.add_argument("--results-dir", default=None,
+                        help="Results directory (default: <project>/results).")
     parser.add_argument("--skip-existing", action="store_true",
                         help="Skip experiments whose metrics JSON already exists.")
     parser.add_argument("--force", action="store_true",
@@ -167,10 +233,15 @@ def main():
     if args.skip_existing and args.force:
         parser.error("--skip-existing and --force are mutually exclusive.")
 
-    configs = build_pilot_matrix(models=args.models)
+    configs = build_matrix_configs(
+        args.matrix, datasets=args.datasets, input_types=args.input_types,
+        horizons=args.horizons, seeds=args.seeds, models=args.models,
+    )
+    print(f"Matrix '{args.matrix}': {len(configs)} experiment(s).")
     run_matrix(
         configs,
         project_root=str(PROJECT_ROOT),
+        results_dir=args.results_dir,
         epochs=args.epochs,
         skip_existing=args.skip_existing,
         force=args.force,
