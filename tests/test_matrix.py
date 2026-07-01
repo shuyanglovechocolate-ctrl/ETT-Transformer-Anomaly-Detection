@@ -18,7 +18,9 @@ from experiments.run_matrix import (
     build_matrix_configs,
     get_default_model_config,
     experiment_exists,
+    is_completed_metrics_file,
     run_matrix,
+    REQUIRED_METRICS_KEYS,
     PILOT_MODELS,
 )
 from src.models import validate_model_config
@@ -75,17 +77,57 @@ def test_run_matrix_skip_and_force_mutually_exclusive():
         run_matrix([], skip_existing=True, force=True)
 
 
+def _complete_metrics_json():
+    return {k: "x" for k in REQUIRED_METRICS_KEYS}
+
+
 def test_run_matrix_skips_existing(tmp_path):
     config = build_matrix_config("ETTh1", "multivariate", 96, 24, 42, "naive")
     eid = build_experiment_id(config)
     metrics_path = Path(build_output_paths(eid, str(tmp_path))["metrics"])
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
-    metrics_path.write_text("{}")
+    metrics_path.write_text(json.dumps(_complete_metrics_json()))
 
     summary = run_matrix([config], project_root=str(PROJECT_ROOT),
                          results_dir=str(tmp_path), skip_existing=True)
     assert summary["skipped"] == [eid]
     assert summary["succeeded"] == []
+
+
+def test_is_completed_metrics_file(tmp_path):
+    missing = tmp_path / "missing.json"
+    assert is_completed_metrics_file(str(missing)) is False
+
+    empty = tmp_path / "empty.json"
+    empty.write_text("")
+    assert is_completed_metrics_file(str(empty)) is False
+
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json")
+    assert is_completed_metrics_file(str(bad)) is False
+
+    partial = tmp_path / "partial.json"
+    partial.write_text(json.dumps({"experiment_id": "x"}))  # missing keys
+    assert is_completed_metrics_file(str(partial)) is False
+
+    good = tmp_path / "good.json"
+    good.write_text(json.dumps(_complete_metrics_json()))
+    assert is_completed_metrics_file(str(good)) is True
+
+
+def test_run_matrix_does_not_skip_broken_metrics(tmp_path):
+    # A half-written / empty metrics file must NOT be treated as complete: the
+    # experiment should re-run rather than be skipped.
+    config = build_matrix_config("ETTh1", "multivariate", 96, 24, 42, "naive")
+    eid = build_experiment_id(config)
+    metrics_path = Path(build_output_paths(eid, str(tmp_path))["metrics"])
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    metrics_path.write_text("")  # broken (empty) file
+
+    summary = run_matrix([config], project_root=str(PROJECT_ROOT),
+                         results_dir=str(tmp_path), skip_existing=True)
+    assert summary["skipped"] == []
+    assert summary["succeeded"] == [eid]
 
 
 def test_build_core_light_default_144():

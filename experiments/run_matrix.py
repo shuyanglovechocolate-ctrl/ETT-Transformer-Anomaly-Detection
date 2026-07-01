@@ -11,6 +11,7 @@ Examples:
 """
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -156,10 +157,34 @@ def build_matrix_configs(matrix, datasets=None, input_types=None, horizons=None,
     raise ValueError(f"Unknown matrix '{matrix}'.")
 
 
+REQUIRED_METRICS_KEYS = [
+    "experiment_id", "dataset", "model", "metrics", "training", "paths",
+]
+
+
 def experiment_exists(config: dict, results_dir: str) -> bool:
-    """True if this experiment's metrics JSON already exists."""
+    """True if this experiment's metrics JSON file exists (existence only)."""
     eid = build_experiment_id(config)
     return os.path.exists(build_output_paths(eid, results_dir)["metrics"])
+
+
+def is_completed_metrics_file(metrics_path: str) -> bool:
+    """True only if the metrics file exists, is non-empty, parses as JSON and
+    contains all required keys.
+
+    This guards --skip-existing against empty or half-written metrics files left
+    by an interrupted run, which must be re-run rather than skipped.
+    """
+    if not os.path.exists(metrics_path):
+        return False
+    if os.path.getsize(metrics_path) == 0:
+        return False
+    try:
+        with open(metrics_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+    return all(key in data for key in REQUIRED_METRICS_KEYS)
 
 
 def run_matrix(
@@ -181,8 +206,9 @@ def run_matrix(
 
     for config in configs:
         eid = build_experiment_id(config)
-        if skip_existing and experiment_exists(config, results_dir):
-            print(f"[skip] {eid} (metrics already exist)")
+        metrics_path = build_output_paths(eid, results_dir)["metrics"]
+        if skip_existing and is_completed_metrics_file(metrics_path):
+            print(f"[skip] {eid} (completed metrics exist)")
             skipped.append(eid)
             continue
         try:
