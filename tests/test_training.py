@@ -28,6 +28,7 @@ from src.training import (
     create_prediction_dataframe,
     save_checkpoint,
     load_checkpoint,
+    save_loss_curve,
     EarlyStopping,
     build_experiment_id,
     build_output_paths,
@@ -272,6 +273,20 @@ def test_append_experiment_log_header_then_append(tmp_path):
     assert rows[1]["experiment_id"] == "b"
 
 
+def test_save_loss_curve_single_epoch(tmp_path):
+    # One data point must still produce a (non-crashing) figure thanks to markers.
+    path = tmp_path / "loss.png"
+    save_loss_curve({"train_loss": [0.5], "val_loss": [0.6]}, str(path))
+    assert path.exists() and path.stat().st_size > 0
+
+
+def test_save_loss_curve_empty_history(tmp_path):
+    # Parameter-free models (Naive) have empty history; figure should still save.
+    path = tmp_path / "loss_empty.png"
+    save_loss_curve({"train_loss": [], "val_loss": []}, str(path))
+    assert path.exists() and path.stat().st_size > 0
+
+
 def test_run_experiment_end_to_end(tmp_path):
     # Real ETTh1, linear model, 1 epoch, results redirected to tmp_path.
     config = _full_config({"name": "linear"}, epochs=1)
@@ -291,3 +306,18 @@ def test_run_experiment_end_to_end(tmp_path):
     assert (tmp_path / "predictions" / f"{eid}_predictions.csv").exists()
     assert (tmp_path / "logs" / f"{eid}_config.yaml").exists()
     assert (tmp_path / "metrics" / "experiment_log.csv").exists()
+    # A trainable model has a loss curve.
+    assert (tmp_path / "figures" / f"{eid}_loss.png").exists()
+
+
+def test_run_experiment_naive_has_no_loss_curve(tmp_path):
+    # Naive is parameter-free: it must produce a prediction plot but NO loss
+    # curve (a loss curve would be a meaningless, empty-looking figure).
+    config = _full_config({"name": "naive"})
+    record = run_experiment_from_config(
+        config, project_root=str(PROJECT_ROOT), results_dir=str(tmp_path),
+    )
+    eid = record["experiment_id"]
+    assert (tmp_path / "figures" / f"{eid}_prediction.png").exists()
+    assert not (tmp_path / "figures" / f"{eid}_loss.png").exists()
+    assert record["paths"]["figures"] == [f"results/figures/{eid}_prediction.png"]

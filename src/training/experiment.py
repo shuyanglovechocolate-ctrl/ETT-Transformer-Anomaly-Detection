@@ -247,7 +247,11 @@ def run_experiment_from_config(
         "paths": {
             "checkpoint": checkpoint_rel,
             "predictions": paths_rel["predictions"],
-            "figures": [paths_rel["loss_curve"], paths_rel["prediction_plot"]],
+            # A loss curve only exists for models that actually train.
+            "figures": (
+                [paths_rel["loss_curve"], paths_rel["prediction_plot"]]
+                if is_trainable else [paths_rel["prediction_plot"]]
+            ),
             "config": paths_rel["config_snapshot"],
         },
     }
@@ -262,7 +266,10 @@ def run_experiment_from_config(
     save_json(metrics_record, paths["metrics"])
     save_json(history, paths["history"])
     save_config_snapshot(config, paths["config_snapshot"])
-    save_loss_curve(history, paths["loss_curve"], title=experiment_id)
+    # Parameter-free baselines (Naive) have no training history, so a loss curve
+    # is meaningless; we skip it rather than produce an empty-looking figure.
+    if is_trainable:
+        save_loss_curve(history, paths["loss_curve"], title=experiment_id)
     save_prediction_plot(df, paths["prediction_plot"], title=experiment_id)
 
     timestamp = datetime.now(timezone.utc).isoformat()

@@ -14,18 +14,34 @@ def _ensure_dir(path: str) -> None:
 
 
 def save_loss_curve(history: dict, path: str, title: str = "Training Loss") -> None:
-    """Save train/val loss curves. No-op-safe for empty history (Naive)."""
+    """Save train/val loss curves.
+
+    Markers are used so that single-epoch runs (one data point) are still
+    visible. For parameter-free models (Naive) the history is empty, so an
+    explanatory annotation is drawn instead of a blank plot.
+    """
     _ensure_dir(path)
+    train_loss = history.get("train_loss", [])
+    val_loss = history.get("val_loss", [])
+
     plt.figure(figsize=(8, 5))
-    epochs = range(1, len(history.get("train_loss", [])) + 1)
-    if history.get("train_loss"):
-        plt.plot(epochs, history["train_loss"], label="train")
-    if history.get("val_loss"):
-        plt.plot(epochs, history["val_loss"], label="val")
+    if not train_loss and not val_loss:
+        plt.text(
+            0.5, 0.5, "No training (parameter-free baseline)",
+            ha="center", va="center", transform=plt.gca().transAxes,
+        )
+    else:
+        if train_loss:
+            plt.plot(range(1, len(train_loss) + 1), train_loss,
+                     marker="o", label="train")
+        if val_loss:
+            plt.plot(range(1, len(val_loss) + 1), val_loss,
+                     marker="o", label="val")
+        plt.legend()
+
     plt.title(title)
     plt.xlabel("Epoch")
     plt.ylabel("Loss (scaled MSE)")
-    plt.legend()
     plt.tight_layout()
     plt.savefig(path, dpi=150)
     plt.close()
