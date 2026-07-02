@@ -1,0 +1,65 @@
+{
+  "checks": [
+    {
+      "check": "experiment_log_exists",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "no_duplicate_ids_after_dedup",
+      "ok": true,
+      "detail": "192 raw rows -> 192 unique"
+    },
+    {
+      "check": "core-light_complete_in_log",
+      "ok": true,
+      "detail": "expected 144, missing 0: []"
+    },
+    {
+      "check": "core-light_predictions_exist",
+      "ok": true,
+      "detail": "missing 0 prediction files: []"
+    },
+    {
+      "check": "core-deep_complete_in_log",
+      "ok": true,
+      "detail": "expected 36, missing 0: []"
+    },
+    {
+      "check": "core-deep_predictions_exist",
+      "ok": true,
+      "detail": "missing 0 prediction files: []"
+    },
+    {
+      "check": "robustness-deep_complete_in_log",
+      "ok": true,
+      "detail": "expected 12, missing 0: []"
+    },
+    {
+      "check": "robustness-deep_predictions_exist",
+      "ok": true,
+      "detail": "missing 0 prediction files: []"
+    },
+    {
+      "check": "all_groups_have_3_seeds",
+      "ok": true,
+      "detail": "0 groups with !=3 seeds: {}"
+    },
+    {
+      "check": "no_nan_metrics",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "metrics_positive",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "model_comparison_num_runs_ok",
+      "ok": true,
+      "detail": "num_runs range 3-3"
+    }
+  ],
+  "ok": true
+}
