@@ -15,6 +15,10 @@ from src.anomaly.detector import detect_anomalies
 from src.anomaly.metrics import calculate_detection_metrics
 from src.anomaly.baselines import compute_baseline_scores, BASELINE_DETECTORS
 from src.anomaly.event_metrics import calculate_event_detection_metrics
+from src.anomaly.diagnostics import (
+    summarize_score_distribution, compute_causal_rolling_std,
+    compute_flatness_score, compare_scores_by_label,
+)
 
 __all__ = [
     "aggregate_residuals",
@@ -31,4 +35,8 @@ __all__ = [
     "compute_baseline_scores",
     "BASELINE_DETECTORS",
     "calculate_event_detection_metrics",
+    "summarize_score_distribution",
+    "compute_causal_rolling_std",
+    "compute_flatness_score",
+    "compare_scores_by_label",
 ]
