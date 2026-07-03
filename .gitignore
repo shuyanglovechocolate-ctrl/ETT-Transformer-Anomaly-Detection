@@ -17,5 +17,9 @@ results/checkpoints/
 results/predictions/
 results/logs/
 
+# Anomaly intermediate artifacts (aggregated residuals / val predictions)
+results/anomaly/residuals/
+results/anomaly/predictions/
+
 # OS
 .DS_Store
