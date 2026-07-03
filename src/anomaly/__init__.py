@@ -10,6 +10,8 @@ from src.anomaly.residuals import (
     AGGREGATION_METHODS,
 )
 from src.anomaly.injection import inject_synthetic_anomalies, ANOMALY_TYPES
+from src.anomaly.thresholds import compute_threshold, validate_scores, THRESHOLD_METHODS
+from src.anomaly.detector import detect_anomalies
 
 __all__ = [
     "aggregate_residuals",
@@ -18,4 +20,8 @@ __all__ = [
     "AGGREGATION_METHODS",
     "inject_synthetic_anomalies",
     "ANOMALY_TYPES",
+    "compute_threshold",
+    "validate_scores",
+    "THRESHOLD_METHODS",
+    "detect_anomalies",
 ]
