@@ -9,10 +9,13 @@ from src.anomaly.residuals import (
     save_aggregated_residuals,
     AGGREGATION_METHODS,
 )
+from src.anomaly.injection import inject_synthetic_anomalies, ANOMALY_TYPES
 
 __all__ = [
     "aggregate_residuals",
     "load_prediction_file",
     "save_aggregated_residuals",
     "AGGREGATION_METHODS",
+    "inject_synthetic_anomalies",
+    "ANOMALY_TYPES",
 ]
