@@ -24,6 +24,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.anomaly import (
     inject_synthetic_anomalies, compute_threshold, detect_anomalies,
     calculate_detection_metrics, load_prediction_file, compute_baseline_scores,
+    calculate_event_detection_metrics,
 )
 from src.anomaly.plots import plot_anomaly_detection
 
@@ -53,6 +54,8 @@ RESULT_COLUMNS = [
     "tp", "fp", "tn", "fn", "precision", "recall", "f1",
     "false_positive_rate", "true_negative_rate", "num_points",
     "num_true_anomaly", "num_predicted_anomaly",
+    "num_true_events", "num_detected_events", "event_recall",
+    "mean_detection_delay", "median_detection_delay", "max_detection_delay",
 ]
 
 
@@ -127,6 +130,7 @@ def run(project_root, results_dir=None):
                         for detector in DETECTORS:
                             for tmethod in THRESHOLD_METHODS:
                                 detected, m = evaluate(detector, injected, val, tmethod)
+                                event_m = calculate_event_detection_metrics(detected)
                                 rows.append({
                                     "dataset": dataset, "model": model,
                                     "input_type": INPUT_TYPE, "horizon": horizon,
@@ -135,7 +139,7 @@ def run(project_root, results_dir=None):
                                     "anomaly_ratio": ANOMALY_RATIO,
                                     "magnitude_scale": MAGNITUDE_SCALE,
                                     "detector_type": detector, "threshold_method": tmethod,
-                                    **m,
+                                    **m, **event_m,
                                 })
                                 # Representative figures (residual detector, seed 42).
                                 if (detector == "residual" and dataset == "ETTh1"
@@ -150,7 +154,7 @@ def run(project_root, results_dir=None):
 
     results = pd.DataFrame(rows, columns=RESULT_COLUMNS)
     out = os.path.join(results_dir, "anomaly", "metrics",
-                       "anomaly_detection_results_v2.csv")
+                       "anomaly_detection_results_v3.csv")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     results.to_csv(out, index=False)
     print(f"Wrote {out} ({len(results)} rows)")

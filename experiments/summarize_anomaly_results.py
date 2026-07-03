@@ -49,6 +49,31 @@ def summary_by_horizon(df):
     return _mean_std(df, ["horizon"])
 
 
+def event_summary_by_detector(df):
+    """Event-wise recall and detection delay per detector x anomaly type."""
+    if "event_recall" not in df.columns:
+        return None
+    return df.groupby(["detector_type", "anomaly_type"]).agg(
+        mean_event_recall=("event_recall", "mean"),
+        std_event_recall=("event_recall", "std"),
+        mean_detection_delay=("mean_detection_delay", "mean"),
+        num_runs=("event_recall", "count"),
+    ).reset_index()
+
+
+def event_summary_by_type(df):
+    """Best detector per anomaly type by mean event recall."""
+    if "event_recall" not in df.columns:
+        return None
+    per = df.groupby(["anomaly_type", "detector_type"]).agg(
+        mean_event_recall=("event_recall", "mean"),
+        mean_detection_delay=("mean_detection_delay", "mean"),
+    ).reset_index()
+    best_idx = per.groupby("anomaly_type")["mean_event_recall"].idxmax()
+    best = per.loc[best_idx].rename(columns={"detector_type": "best_detector"})
+    return best.reset_index(drop=True)
+
+
 def summarize(results_path, output_dir):
     if not os.path.exists(results_path):
         raise FileNotFoundError(f"Results not found: {results_path}")
@@ -60,7 +85,10 @@ def summarize(results_path, output_dir):
         "anomaly_summary_by_type": summary_by_type(df),
         "anomaly_summary_by_threshold": summary_by_threshold(df),
         "anomaly_summary_by_horizon": summary_by_horizon(df),
+        "anomaly_event_summary_by_detector": event_summary_by_detector(df),
+        "anomaly_event_summary_by_type": event_summary_by_type(df),
     }
+    tables = {k: v for k, v in tables.items() if v is not None}
     for name, table in tables.items():
         path = os.path.join(output_dir, f"{name}.csv")
         table.to_csv(path, index=False)
@@ -72,7 +100,7 @@ def main():
     parser = argparse.ArgumentParser(description="Summarize anomaly results.")
     metrics_dir = str(PROJECT_ROOT / "results" / "anomaly" / "metrics")
     parser.add_argument("--results-path",
-                        default=os.path.join(metrics_dir, "anomaly_detection_results_v2.csv"))
+                        default=os.path.join(metrics_dir, "anomaly_detection_results_v3.csv"))
     parser.add_argument("--output-dir", default=metrics_dir)
     args = parser.parse_args()
     summarize(args.results_path, args.output_dir)

@@ -14,6 +14,7 @@ from src.anomaly.thresholds import compute_threshold, validate_scores, THRESHOLD
 from src.anomaly.detector import detect_anomalies
 from src.anomaly.metrics import calculate_detection_metrics
 from src.anomaly.baselines import compute_baseline_scores, BASELINE_DETECTORS
+from src.anomaly.event_metrics import calculate_event_detection_metrics
 
 __all__ = [
     "aggregate_residuals",
@@ -29,4 +30,5 @@ __all__ = [
     "calculate_detection_metrics",
     "compute_baseline_scores",
     "BASELINE_DETECTORS",
+    "calculate_event_detection_metrics",
 ]
