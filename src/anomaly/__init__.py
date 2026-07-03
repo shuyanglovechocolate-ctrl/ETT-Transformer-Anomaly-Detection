@@ -13,6 +13,7 @@ from src.anomaly.injection import inject_synthetic_anomalies, ANOMALY_TYPES
 from src.anomaly.thresholds import compute_threshold, validate_scores, THRESHOLD_METHODS
 from src.anomaly.detector import detect_anomalies
 from src.anomaly.metrics import calculate_detection_metrics
+from src.anomaly.baselines import compute_baseline_scores, BASELINE_DETECTORS
 
 __all__ = [
     "aggregate_residuals",
@@ -26,4 +27,6 @@ __all__ = [
     "THRESHOLD_METHODS",
     "detect_anomalies",
     "calculate_detection_metrics",
+    "compute_baseline_scores",
+    "BASELINE_DETECTORS",
 ]

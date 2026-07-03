@@ -1,12 +1,13 @@
-"""End-to-end synthetic anomaly detection experiment (Module 6.5).
+"""End-to-end synthetic anomaly detection experiment (Modules 6.5 / 6.6).
 
-Ties together Modules 6.1-6.4 over a fixed matrix:
+Compares the forecast-residual detector against causal statistical baselines
+(raw_zscore, diff_score, rolling_zscore) over a fixed matrix, repeated across
+several injection seeds for robustness. All detectors share the SAME injected
+test set per scenario, and every threshold is learned only from validation
+scores (leakage-free). No model is re-trained.
 
-    validation residual -> threshold
-    test residual -> inject anomalies -> detect -> point-wise metrics
-
-No model is re-trained; residuals come from Module 6.1 outputs. Produces a
-144-row results table plus a few representative figures.
+Matrix: 2 datasets x 2 horizons x 3 aggregations x 3 anomaly types
+        x 3 injection seeds x 4 detectors x 4 thresholds = 1728 rows.
 """
 
 import argparse
@@ -21,37 +22,37 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
 from src.anomaly import (
-    aggregate_residuals, inject_synthetic_anomalies, compute_threshold,
-    detect_anomalies, calculate_detection_metrics, load_prediction_file,
+    inject_synthetic_anomalies, compute_threshold, detect_anomalies,
+    calculate_detection_metrics, load_prediction_file, compute_baseline_scores,
 )
 from src.anomaly.plots import plot_anomaly_detection
 
 DATASETS = ["ETTh1", "ETTh2"]
 HORIZONS = [24, 96]
 INPUT_TYPE = "multivariate"
-SEED = 42
+MODEL_SEED = 42
 AGGREGATIONS = ["first", "mean", "max"]
 ANOMALY_TYPES = ["spike", "level_shift", "frozen"]
+INJECTION_SEEDS = [42, 2024, 3407]
+DETECTORS = ["residual", "raw_zscore", "diff_score", "rolling_zscore"]
 THRESHOLD_METHODS = ["percentile", "mean_std", "iqr", "mad"]
 
 ANOMALY_RATIO = 0.02
 MAGNITUDE_SCALE = 3.0
+ROLLING_WINDOW = 24
 DURATION_RANGES = {"spike": (1, 3), "level_shift": (12, 24), "frozen": (12, 24)}
 THRESHOLD_PARAMS = {
-    "percentile": {"percentile": 99},
-    "mean_std": {"k": 3.0},
-    "iqr": {"k": 1.5},
-    "mad": {"k": 3.5},
+    "percentile": {"percentile": 99}, "mean_std": {"k": 3.0},
+    "iqr": {"k": 1.5}, "mad": {"k": 3.5},
 }
 
 RESULT_COLUMNS = [
-    "dataset", "model", "input_type", "horizon", "seed", "aggregation_method",
-    "anomaly_type", "anomaly_ratio", "magnitude_scale", "threshold_method",
-    "threshold_value", "tp", "fp", "tn", "fn", "precision", "recall", "f1",
+    "dataset", "model", "input_type", "horizon", "model_seed", "aggregation_method",
+    "anomaly_type", "injection_seed", "anomaly_ratio", "magnitude_scale",
+    "detector_type", "threshold_method", "threshold_value",
+    "tp", "fp", "tn", "fn", "precision", "recall", "f1",
     "false_positive_rate", "true_negative_rate", "num_points",
     "num_true_anomaly", "num_predicted_anomaly",
-    "validation_score_mean", "validation_score_std",
-    "test_score_mean", "test_score_std",
 ]
 
 
@@ -64,20 +65,35 @@ def best_model_for(best_df, dataset, horizon):
 
 
 def experiment_id(dataset, model, horizon):
-    return f"{dataset}_{model}_{INPUT_TYPE}_len96_h{horizon}_seed{SEED}"
+    return f"{dataset}_{model}_{INPUT_TYPE}_len96_h{horizon}_seed{MODEL_SEED}"
 
 
-def evaluate_scenario(val_scores, test_df, anomaly_type, threshold_method,
-                      anomaly_ratio=ANOMALY_RATIO, magnitude_scale=MAGNITUDE_SCALE,
-                      seed=SEED):
-    """Inject -> threshold (from validation) -> detect -> metrics. Pure/testable."""
-    injected = inject_synthetic_anomalies(
-        test_df, anomaly_type, anomaly_ratio=anomaly_ratio,
-        duration_range=DURATION_RANGES[anomaly_type],
-        magnitude_scale=magnitude_scale, seed=seed)
+def detector_scores(detector_type, injected_df, val_df):
+    """Return (validation_scores, test_scores) for a detector.
+
+    Residual detector uses the aggregated residual anomaly_score; baselines
+    score y_true causally, with thresholds referenced to validation y.
+    """
+    if detector_type == "residual":
+        return (val_df["anomaly_score"].to_numpy(),
+                injected_df["anomaly_score"].to_numpy())
+    ref = val_df["y_true"].to_numpy()
+    val_scores = compute_baseline_scores(detector_type, ref, ref_series=ref,
+                                         window=ROLLING_WINDOW)
+    test_scores = compute_baseline_scores(
+        detector_type, injected_df["y_true_anomalous"].to_numpy(),
+        ref_series=ref, window=ROLLING_WINDOW)
+    return val_scores, test_scores
+
+
+def evaluate(detector_type, injected_df, val_df, threshold_method):
+    """Threshold from validation, detect on injected test, compute metrics."""
+    val_scores, test_scores = detector_scores(detector_type, injected_df, val_df)
     threshold = compute_threshold(val_scores, threshold_method,
                                   **THRESHOLD_PARAMS[threshold_method])
-    detected = detect_anomalies(injected, threshold)
+    scored = injected_df.copy()
+    scored["detector_score"] = test_scores
+    detected = detect_anomalies(scored, threshold, score_col="detector_score")
     metrics = calculate_detection_metrics(detected)
     metrics["threshold_value"] = threshold
     return detected, metrics
@@ -102,33 +118,39 @@ def run(project_root, results_dir=None):
                 test = load_prediction_file(
                     os.path.join(residual_dir, f"{eid}_test_residual_{agg}.csv"))
                 for anomaly_type in ANOMALY_TYPES:
-                    for tmethod in THRESHOLD_METHODS:
-                        detected, m = evaluate_scenario(
-                            val["anomaly_score"], test, anomaly_type, tmethod)
-                        rows.append({
-                            "dataset": dataset, "model": model,
-                            "input_type": INPUT_TYPE, "horizon": horizon, "seed": SEED,
-                            "aggregation_method": agg, "anomaly_type": anomaly_type,
-                            "anomaly_ratio": ANOMALY_RATIO,
-                            "magnitude_scale": MAGNITUDE_SCALE,
-                            "threshold_method": tmethod, **m,
-                            "validation_score_mean": float(val["anomaly_score"].mean()),
-                            "validation_score_std": float(val["anomaly_score"].std()),
-                            "test_score_mean": float(test["anomaly_score"].mean()),
-                            "test_score_std": float(test["anomaly_score"].std()),
-                        })
-                        # Representative figures: ETTh1 / h24 / first / percentile.
-                        if (dataset == "ETTh1" and horizon == 24 and agg == "first"
-                                and tmethod == "percentile"):
-                            fig = os.path.join(
-                                fig_dir, f"ETTh1_h24_first_{anomaly_type}_percentile99.png")
-                            plot_anomaly_detection(
-                                detected, fig,
-                                title=f"ETTh1 {model} h24 first — {anomaly_type} (percentile99)")
+                    for inj_seed in INJECTION_SEEDS:
+                        # One injected set shared by all detectors (fair comparison).
+                        injected = inject_synthetic_anomalies(
+                            test, anomaly_type, anomaly_ratio=ANOMALY_RATIO,
+                            duration_range=DURATION_RANGES[anomaly_type],
+                            magnitude_scale=MAGNITUDE_SCALE, seed=inj_seed)
+                        for detector in DETECTORS:
+                            for tmethod in THRESHOLD_METHODS:
+                                detected, m = evaluate(detector, injected, val, tmethod)
+                                rows.append({
+                                    "dataset": dataset, "model": model,
+                                    "input_type": INPUT_TYPE, "horizon": horizon,
+                                    "model_seed": MODEL_SEED, "aggregation_method": agg,
+                                    "anomaly_type": anomaly_type, "injection_seed": inj_seed,
+                                    "anomaly_ratio": ANOMALY_RATIO,
+                                    "magnitude_scale": MAGNITUDE_SCALE,
+                                    "detector_type": detector, "threshold_method": tmethod,
+                                    **m,
+                                })
+                                # Representative figures (residual detector, seed 42).
+                                if (detector == "residual" and dataset == "ETTh1"
+                                        and horizon == 24 and agg == "first"
+                                        and tmethod == "percentile" and inj_seed == 42):
+                                    # residual detector: detector_score == anomaly_score,
+                                    # so the existing anomaly_score column is correct.
+                                    plot_anomaly_detection(
+                                        detected,
+                                        os.path.join(fig_dir, f"ETTh1_h24_first_{anomaly_type}_percentile99.png"),
+                                        title=f"ETTh1 {model} h24 first — {anomaly_type} (residual, percentile99)")
 
     results = pd.DataFrame(rows, columns=RESULT_COLUMNS)
     out = os.path.join(results_dir, "anomaly", "metrics",
-                       "anomaly_detection_results.csv")
+                       "anomaly_detection_results_v2.csv")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     results.to_csv(out, index=False)
     print(f"Wrote {out} ({len(results)} rows)")
