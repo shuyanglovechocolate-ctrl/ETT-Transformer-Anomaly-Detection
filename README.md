@@ -1,15 +1,36 @@
-# ETT Transformer Anomaly Detection
+# ETT Transformer Oil Temperature Forecasting and Anomaly Detection
 
-This project investigates deep learning-based time series forecasting and anomaly detection using the Electricity Transformer Temperature (ETT) datasets. The main goal is to predict oil temperature (OT) using historical multivariate time series data and identify potential anomalies based on prediction errors.
+## Project Overview
 
-## Project Objectives
+This project builds a unified, reproducible framework that connects **transformer
+oil-temperature (OT) forecasting** on the Electricity Transformer Temperature (ETT)
+datasets with **residual-based synthetic anomaly detection**. It systematically
+compares strong simple baselines (Naive, Linear, NLinear, DLinear) against a
+recurrent model (LSTM) and an attention-based model (Transformer), then reuses the
+resulting forecast residuals to detect injected anomalies and analyses where this
+residual signal is effective and where it fails.
 
-- Explore and preprocess ETT time series datasets.
-- Build an LSTM baseline model for oil temperature forecasting.
-- Develop a Transformer-based forecasting model.
-- Compare model performance using MAE and RMSE.
-- Detect anomalies using prediction errors.
-- Visualize forecasting results and detected anomalies.
+## Research Question
+
+> How effectively can a unified forecasting-residual framework predict transformer
+> oil temperature and detect synthetic anomalies on ETT datasets, while assessing
+> whether complex deep-learning models outperform simpler linear baselines?
+
+## Research Gap and Contribution
+
+Although ETT datasets are widely used for time-series forecasting, there remains
+room for a focused and reproducible study that **connects OT forecasting with
+residual-based anomaly detection**, while comparing strong simple baselines against
+recurrent and Transformer models under a single leakage-free protocol.
+
+This project contributes:
+
+- a leakage-free, config-driven data and training pipeline (Modules 1–2);
+- a systematic forecasting comparison with per-horizon analysis and paired
+  bootstrap significance testing (Module 3);
+- a residual-based synthetic anomaly-detection framework with causal statistical
+  baselines, multi-seed robustness, event-wise evaluation and diagnostics
+  (Module 4).
 
 ## Dataset
 
@@ -34,15 +55,22 @@ This project primarily uses `ETTh1` and `ETTh2`, and may extend to `ETTm1` / `ET
 
 The forecasting target is `OT`.
 
-## Methods
+## Methodology
 
-- Exploratory Data Analysis
-- Chronological train / validation / test splitting
-- Leakage-free feature and target scaling
-- Sliding window sequence generation
-- LSTM forecasting
-- Transformer forecasting
-- Prediction-error-based anomaly detection
+The project is organised into four modules, each with pytest coverage and
+committed result snapshots:
+
+- **Module 1 — Data Pipeline:** leakage-free chronological split, train-only
+  scaling, sliding windows, PyTorch DataLoaders.
+- **Module 2 — Forecasting Model Library:** Naive, Linear, NLinear, DLinear, LSTM
+  and Transformer under one input-output contract.
+- **Module 3 — Forecasting Experiments:** batch experiment matrix, early stopping,
+  per-horizon and paired-bootstrap significance analysis, best-model selection.
+- **Module 4 — Synthetic Anomaly Detection:** residual aggregation, anomaly
+  injection, validation-based thresholding, detection, point-wise and event-wise
+  evaluation, causal baselines and diagnostics.
+
+Each module is detailed below.
 
 ## Module 1: Data Pipeline
 
@@ -119,43 +147,26 @@ python experiments/check_module1_pipeline.py
 ## Project Structure
 
 ```text
-data/
-  raw/            # ETTh1/h2/m1/m2 CSV files
-  processed/      # optional saved windows (.npz), git-ignored
-notebooks/
-  01_eda.ipynb            # EDA + data-quality checks + split/scaling demo
-  02_data_pipeline.ipynb  # end-to-end config-driven pipeline
+data/raw/                     # ETTh1/h2/m1/m2 CSV files
+notebooks/                    # 01_eda.ipynb, 02_data_pipeline.ipynb
 src/
-  data/
-    loader.py        # load ETT CSV, parse dates, quality checks
-    splitter.py      # chronological train/val/test split
-    preprocessing.py # scaler_x / scaler_y, feature selection, inverse transform
-    dataset.py       # sliding windows (with y_dates), ETTDataset, DataLoaders
-    pipeline.py      # build_data_pipeline(): unified entry + metadata
-  models/
-    base.py          # BaseForecaster
-    naive.py         # Naive / persistence baseline
-    linear.py        # plain linear baseline
-    nlinear.py       # NLinear-style baseline (last-value normalization)
-    dlinear.py       # decomposition-based DLinear (trend + seasonal, +channel-independent)
-    lstm.py          # LSTM forecaster
-    transformer.py   # Transformer forecaster + positional encoding
-    factory.py       # build_model() + validate_model_config() + MODEL_REGISTRY
-    utils.py         # count_parameters(), get_model_summary()
-  utils/
-    seed.py          # global random seed
-    device.py        # CPU / CUDA / MPS selection
-    config.py        # YAML config loading + validate_config()
-configs/
-  ETTh1_multivariate_h24.yaml
-  ETTh1_univariate_h24.yaml
-experiments/
-  check_module1_pipeline.py  # Module 1 interface acceptance check
-tests/
-  test_data_pipeline.py      # minimal pytest suite for Module 1
+  data/                       # Module 1: loader, splitter, preprocessing, dataset, pipeline
+  models/                     # Module 2: base, naive, linear, nlinear, dlinear, lstm,
+                              #           transformer, factory, utils
+  training/                   # Module 3: trainer, evaluator, predictor, checkpoint,
+                              #           early_stopping, experiment, plots
+  anomaly/                    # Module 4: residuals, injection, thresholds, detector,
+                              #           metrics, event_metrics, baselines, diagnostics, plots
+  evaluate.py                 # original-scale MAE / RMSE / residuals
+configs/                      # experiment configs (+ generated/, git-ignored)
+experiments/                  # runnable scripts (matrix runners, summaries, diagnostics)
+tests/                        # pytest suites for all four modules
 results/
-  figures/          # EDA figures
-  metrics/          # summary statistics, metrics, pipeline metadata JSON
+  metrics/                    # forecasting summary tables (committed)
+  figures/                    # figures (mostly git-ignored; representative ones kept)
+  anomaly/metrics/            # anomaly result tables + summaries (committed)
+  anomaly/figures/            # representative anomaly figures (committed)
+  checkpoints/ predictions/ logs/   # heavy artifacts (git-ignored)
 ```
 
 ### Unified pipeline entry
@@ -249,7 +260,7 @@ AAAI 2023).
 | `nlinear` | `src/models/nlinear.py` | Subtract the last value, predict the change with a linear layer, add the last OT value back (NLinear-inspired, robust to level shifts). |
 | `dlinear` | `src/models/dlinear.py` | Decompose into trend (moving average) + seasonal and project each to the horizon. Channel-mixing by default; `channel_independent: true` uses per-channel temporal projection plus a linear mixing head. |
 | `lstm` | `src/models/lstm.py` | LSTM encoder, last hidden state projected to the horizon. |
-| `transformer` | `src/models/transformer.py` | Input projection + sinusoidal positional encoding + self-attention encoder + pooling + linear head. Supports `forward(x, return_attention=True)` for exploratory RQ4 analysis. |
+| `transformer` | `src/models/transformer.py` | Input projection + sinusoidal positional encoding + self-attention encoder + pooling + linear head. Supports `forward(x, return_attention=True)` for exploratory attention analysis. |
 
 Models are registered in `MODEL_REGISTRY` (`src/models/factory.py`), the single
 source of truth for supported names. Each model also exposes metadata
@@ -343,12 +354,152 @@ dimensions) for Module 3 experiment logs.
 Model utilities, forward-shape, factory and config-validation tests live in
 `tests/test_models.py`.
 
+## Module 3: Forecasting Experiments
+
+Module 3 turns the pipeline and model library into a reproducible experiment
+system. A single experiment is run with:
+
+```bash
+python src/train.py --config configs/ETTh1_multivariate_h24.yaml
+```
+
+It trains with **early stopping**, **gradient clipping** and an optional LR
+scheduler, restores the **best-validation checkpoint** before testing, computes
+MAE / RMSE / WAPE in the **original OT scale**, and records everything (metrics
+JSON, prediction CSV with `residual` and `target_date`, config snapshot, and a
+row in `results/metrics/experiment_log.csv`).
+
+Batch experiments are run through a matrix runner (fail-soft, `--skip-existing`):
+
+```bash
+python experiments/run_matrix.py --matrix core-light   # 4 light models x 2 datasets x 2 input types x 3 horizons x 3 seeds
+python experiments/run_matrix.py --matrix core-deep     # LSTM/Transformer, multivariate
+python experiments/summarize_results.py                 # comparison tables (deduped by experiment_id)
+python experiments/analyze_forecasting_results.py       # per-horizon metrics, best model, bootstrap significance
+python experiments/validate_results.py                  # completeness / consistency checks
+```
+
+The full study covers **192 forecasting runs** (core-light 144 + core-deep 36 +
+a regularized deep-model robustness check 12).
+
+## Module 4: Synthetic Anomaly Detection
+
+Module 4 reuses Module 3 forecast residuals to detect injected anomalies, without
+retraining any model. The pipeline is deliberately **leakage-free**:
+
+```text
+validation residual  -> threshold (percentile / mean+kstd / IQR / MAD)
+test residual        -> inject anomaly into y_true (y_pred unchanged)
+                     -> recompute anomalous residual -> detect (score > threshold)
+                     -> point-wise and event-wise evaluation
+```
+
+Anomalies are injected only into `y_true` (spike / level_shift / frozen), so the
+anomalous residual `y_true_anomalous - y_pred_clean` grows where anomalies occur.
+Thresholds are learned **only from validation residuals**. Three causal
+statistical baselines (`raw_zscore`, `diff_score`, `rolling_zscore`) are compared
+against the residual detector under an identical protocol.
+
+```bash
+python experiments/prepare_anomaly_residuals.py    # validation inference + residual aggregation (6.1)
+python experiments/run_anomaly_detection.py        # detector x threshold x anomaly x injection-seed matrix
+python experiments/summarize_anomaly_results.py    # detector / type / threshold summaries
+python experiments/run_magnitude_sensitivity.py    # F1 vs anomaly magnitude
+python experiments/diagnose_anomaly_residuals.py   # residual + frozen-flatness diagnostics
+```
+
+## Key Results
+
+### Forecasting (Module 3)
+
+Linear-family models, especially **NLinear and DLinear, consistently outperform
+LSTM and Transformer** under the tested ETT settings. Paired bootstrap confidence
+intervals over per-window absolute errors support this: linear-family models
+significantly beat the deep models in **all tested multivariate comparisons**
+(36/36, non-overlapping 95% CIs). A regularized robustness check (lower LR, weight
+decay, higher dropout) reduced deep-model variance but did **not** change the
+ranking. Adding load covariates (multivariate) did not consistently improve OT
+forecasting over univariate input.
+
+### Anomaly detection (Module 4)
+
+The residual-based detector **outperformed the causal statistical baselines** across
+synthetic anomaly types and injection seeds. It was particularly effective for
+**spike and level-shift** anomalies (best F1 ≈ 0.86 and 0.90), while **frozen-value**
+anomalies remained challenging (point-wise F1 ≈ 0.43). Event-wise evaluation showed
+partial monitoring usefulness for frozen events (event recall 0.18 → 0.43, with a
+mean detection delay of ~6 steps), and flatness diagnostics indicated that
+sensor-stuck behaviours are **better characterised by temporal flatness than by
+residual magnitude** (anomaly/normal separation ratio ≈ 23× vs ≈ 1–4× for residual
+score). Overall, forecast residuals provide a useful but **not universal** anomaly
+signal.
+
 ## Setup
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+Tests (fast; synthetic data where possible):
 
-Run the EDA notebook (`notebooks/01_eda.ipynb`) for data-quality checks and figures, then `notebooks/02_data_pipeline.ipynb` to build the config-driven, leakage-free DataLoaders consumed by the forecasting models.
+```bash
+pytest
+```
+
+## How to Reproduce
+
+```bash
+# 1. Module 1 sanity check
+python experiments/check_module1_pipeline.py
+
+# 2. Module 3 forecasting experiments + analysis
+python experiments/run_matrix.py --matrix core-light --skip-existing
+python experiments/run_matrix.py --matrix core-deep  --skip-existing
+python experiments/run_matrix.py --matrix robustness-deep --skip-existing
+python experiments/summarize_results.py
+python experiments/analyze_forecasting_results.py
+
+# 3. Module 4 anomaly detection
+python experiments/prepare_anomaly_residuals.py
+python experiments/run_anomaly_detection.py
+python experiments/summarize_anomaly_results.py
+python experiments/run_magnitude_sensitivity.py
+python experiments/diagnose_anomaly_residuals.py
+```
+
+Heavy artifacts (checkpoints, per-run predictions, logs, most figures) are
+git-ignored and regenerated by the scripts above.
+
+## Main Result Files
+
+Forecasting:
+
+```text
+results/metrics/model_comparison.csv
+results/metrics/per_horizon_summary.csv
+results/metrics/model_significance_tests.csv
+results/metrics/best_model_by_dataset_horizon.csv
+```
+
+Anomaly detection:
+
+```text
+results/anomaly/metrics/anomaly_detection_results_v3.csv
+results/anomaly/metrics/anomaly_summary_by_detector.csv
+results/anomaly/metrics/anomaly_event_summary_by_type.csv
+results/anomaly/metrics/anomaly_magnitude_sensitivity.csv
+results/anomaly/metrics/frozen_flatness_diagnostics.csv
+results/anomaly/metrics/residual_diagnostics.csv
+```
+
+## Limitations and Future Work
+
+- **Synthetic anomalies.** ETT has no ground-truth anomaly labels, so anomalies are
+  injected synthetically. Results describe detectability of controlled anomaly types,
+  not real-world faults.
+- **Frozen anomalies need extra features.** Residual magnitude alone is insufficient
+  for sensor-stuck behaviours; a temporal-flatness feature is a natural complement.
+- **Scope.** The core study uses ETTh1/ETTh2 at `input_len=96`. Future work could add
+  minute-level ETTm1/ETTm2 (frequency effect), an `input_len` ablation, more seeds,
+  training-time/efficiency benchmarks, and a full decomposition/channel-independent
+  DLinear or patch-based Transformer.
