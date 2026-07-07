@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-from src.anomaly import inject_synthetic_anomalies
+from src.anomaly import inject_synthetic_anomalies, ANOMALY_TYPES
 
 
 def _series(n=200):
@@ -82,6 +82,48 @@ def test_segments_do_not_overlap_and_stay_in_bounds():
     assert out["anomaly_segment_id"].max() >= 1
     assert len(out) == 300
     assert out["is_anomaly"].sum() > 0
+
+
+# ---------------------------------------------------------------------------
+# Extended, more fault-like anomaly types (Module 7.7)
+# ---------------------------------------------------------------------------
+
+def test_extended_types_registered():
+    for t in ("drift", "noise_burst", "stuck_with_jitter"):
+        assert t in ANOMALY_TYPES
+
+
+def test_drift_is_monotonic_ramp_from_zero():
+    out = inject_synthetic_anomalies(_series(), "drift",
+                                     duration_range=(12, 24), anomaly_ratio=0.1, seed=11)
+    segs = out[out.is_anomaly].groupby("anomaly_segment_id")
+    assert segs.ngroups > 0
+    for _, g in segs:
+        offset = np.abs((g["y_true_anomalous"] - g["y_true_original"]).to_numpy())
+        assert offset[0] == pytest.approx(0.0, abs=1e-9)   # ramp starts at ~0
+        assert np.all(np.diff(offset) >= -1e-9)            # non-decreasing
+        assert offset[-1] > offset[0]                      # grows across segment
+
+
+def test_noise_burst_adds_variable_noise():
+    out = inject_synthetic_anomalies(_series(), "noise_burst",
+                                     duration_range=(12, 24), anomaly_ratio=0.1, seed=12)
+    for _, g in out[out.is_anomaly].groupby("anomaly_segment_id"):
+        offset = (g["y_true_anomalous"] - g["y_true_original"]).to_numpy()
+        if len(offset) > 3:
+            assert np.std(offset) > 0                      # not a constant offset
+
+
+def test_stuck_with_jitter_near_constant_but_not_frozen():
+    out = inject_synthetic_anomalies(_series(), "stuck_with_jitter",
+                                     duration_range=(12, 24), anomaly_ratio=0.1,
+                                     jitter_scale=0.1, seed=13)
+    global_std = _series()["y_true"].std()
+    for _, g in out[out.is_anomaly].groupby("anomaly_segment_id"):
+        vals = g["y_true_anomalous"].to_numpy()
+        if len(vals) > 3:
+            assert vals.std() > 0                          # jitter -> not exactly frozen
+            assert vals.std() < global_std                 # but much flatter than the signal
 
 
 def test_invalid_anomaly_type_raises():

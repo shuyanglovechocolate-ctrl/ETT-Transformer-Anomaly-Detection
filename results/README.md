@@ -45,6 +45,9 @@ the root `README.md`.
   accuracy vs detection cross-analysis.
 - `anomaly_significance_tests.csv` — paired bootstrap + Wilcoxon of the residual detector
   vs causal baselines.
+- `anomaly_extended_types_results.csv`, `anomaly_extended_types_summary.csv` — separate
+  construct-validity stress test on extended, more fault-like anomaly types (drift /
+  noise_burst / stuck_with_jitter). Additive; does not modify the core three-type tables.
 
 ### Figures
 - `results/figures/eda_*.png` — committed EDA figures.

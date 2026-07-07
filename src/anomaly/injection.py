@@ -6,9 +6,19 @@ model's clean prediction of normal behaviour) is left unchanged, so the
 anomalous residual ``y_true_anomalous - y_pred`` grows where anomalies occur.
 
 Supported types:
-- spike       : additive offset over a short segment.
-- level_shift : additive offset over a longer segment.
-- frozen      : the value is held constant (sensor stuck).
+- spike             : additive offset over a short segment.
+- level_shift       : additive offset over a longer segment.
+- frozen            : the value is held constant (sensor stuck).
+- drift             : a gradual ramp offset (0 -> magnitude) over the segment,
+                      modelling slow sensor drift.
+- noise_burst       : additive high-variance Gaussian noise over the segment,
+                      modelling short-term measurement instability.
+- stuck_with_jitter : frozen plus small Gaussian jitter, modelling a sensor that
+                      is stuck but not perfectly constant.
+
+The first three are the "textbook" types used for the core study; the last three
+are extended, more fault-like types used to probe construct validity (whether the
+residual/flatness signals generalise beyond idealised anomalies).
 
 Segments are non-overlapping and reproducible for a given seed.
 """
@@ -18,7 +28,8 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 
-ANOMALY_TYPES = ("spike", "level_shift", "frozen")
+ANOMALY_TYPES = ("spike", "level_shift", "frozen",
+                 "drift", "noise_burst", "stuck_with_jitter")
 _REQUIRED_COLUMNS = {"target_date", "y_true", "y_pred"}
 
 
@@ -71,6 +82,7 @@ def inject_synthetic_anomalies(
     num_segments: Optional[int] = None,
     duration_range: Tuple[int, int] = (3, 12),
     magnitude_scale: float = 3.0,
+    jitter_scale: float = 0.1,
     seed: int = 42,
 ) -> pd.DataFrame:
     """Inject labelled synthetic anomalies into an aggregated residual series.
@@ -89,7 +101,10 @@ def inject_synthetic_anomalies(
     duration_range : Tuple[int, int]
         Inclusive range of segment lengths in timesteps.
     magnitude_scale : float
-        Offset magnitude in units of std(y_true) (used by spike / level_shift).
+        Offset magnitude in units of std(y_true) (used by spike / level_shift /
+        drift, and as the noise std for noise_burst).
+    jitter_scale : float
+        Jitter std in units of std(y_true), used by stuck_with_jitter.
     seed : int
         Reproducibility seed for segment placement and offset signs.
 
@@ -122,11 +137,20 @@ def inject_synthetic_anomalies(
     segment_id = np.zeros(n, dtype=int)
 
     for start, end, sid in _place_segments(n, anomaly_ratio, num_segments, duration_range, rng):
+        d = end - start
         if anomaly_type in ("spike", "level_shift"):
             sign = 1.0 if rng.random() < 0.5 else -1.0
             y_anom[start:end] = y_orig[start:end] + sign * magnitude
         elif anomaly_type == "frozen":
             y_anom[start:end] = y_orig[start]
+        elif anomaly_type == "drift":
+            sign = 1.0 if rng.random() < 0.5 else -1.0
+            ramp = np.linspace(0.0, 1.0, d)
+            y_anom[start:end] = y_orig[start:end] + sign * magnitude * ramp
+        elif anomaly_type == "noise_burst":
+            y_anom[start:end] = y_orig[start:end] + rng.normal(0.0, magnitude, size=d)
+        elif anomaly_type == "stuck_with_jitter":
+            y_anom[start:end] = y_orig[start] + rng.normal(0.0, jitter_scale * std, size=d)
         is_anomaly[start:end] = True
         segment_id[start:end] = sid
 

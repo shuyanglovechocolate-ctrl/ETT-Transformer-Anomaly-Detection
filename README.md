@@ -450,6 +450,7 @@ python experiments/run_hybrid_detection.py         # residual + flatness hybrid 
 python experiments/prepare_multimodel_residuals.py # residuals for several forecasters (inference only)
 python experiments/analyze_accuracy_vs_detection.py# does lower forecasting error imply better detection?
 python experiments/analyze_anomaly_significance.py # paired bootstrap: residual vs causal baselines
+python experiments/run_extended_anomaly_types.py   # drift / noise_burst / stuck_with_jitter stress test
 ```
 
 ## Key Results
@@ -539,6 +540,33 @@ residual distribution shape and threshold calibration rather than average error.
 This mirrors the forecasting finding that added accuracy/complexity does not
 uniformly translate into practical usefulness.
 
+**Extended, more fault-like anomaly types (stress test).** The core detection results
+use three idealised anomaly types. As a construct-validity stress test, three more
+fault-like synthetic types were evaluated as a **separate** experiment, leaving the core
+canonical results untouched. These are **not** claimed to be real fault labels — they are
+broader synthetic stress tests. Three findings stand out (mean over the same
+2 datasets × 2 horizons × 3 aggregations × 3 injection seeds;
+`anomaly_extended_types_results.csv`):
+
+- **Drift (slow ramp):** the residual detector still leads (PR-AUC ≈ 0.62, event recall
+  ≈ 0.99) but detects the drift only **late** (mean delay ≈ 12 steps), once the
+  accumulated offset has grown large.
+- **Noise burst:** here the residual detector is **not** best — the causal differencing
+  baseline `diff_score` overtakes it (PR-AUC ≈ 0.84 vs ≈ 0.71), because a high-frequency
+  anomaly is exactly what a local difference responds to. Detector choice should follow
+  the anomaly mechanism.
+- **Stuck-with-jitter:** both the residual **and** the flatness detector degrade sharply
+  (PR-AUC ≈ 0.13 and ≈ 0.06; flatness event recall ≈ 0.01). Adding even modest jitter
+  (10% of the signal std) collapses the flatness signal that worked for the idealised
+  frozen anomaly — the frozen→flatness result does **not** transfer to a less idealised
+  stuck sensor.
+
+Together these reinforce the project's theme rather than contradict it: **no single
+detector is universally best, different anomaly mechanisms require different detection
+signals, and conclusions drawn from idealised synthetic anomalies do not automatically
+transfer to more realistic faults** — exactly the construct-validity caveat stated under
+Threats to Validity.
+
 ## Setup
 
 ```bash
@@ -578,6 +606,7 @@ python experiments/run_hybrid_detection.py
 python experiments/prepare_multimodel_residuals.py
 python experiments/analyze_accuracy_vs_detection.py
 python experiments/analyze_anomaly_significance.py
+python experiments/run_extended_anomaly_types.py
 ```
 
 Heavy artifacts (checkpoints, per-run predictions, logs, most figures) are
@@ -610,6 +639,8 @@ results/anomaly/metrics/anomaly_hybrid_summary_by_type.csv
 results/anomaly/metrics/accuracy_vs_detection.csv             # forecasting accuracy vs detection
 results/anomaly/metrics/accuracy_detection_correlation.csv
 results/anomaly/metrics/anomaly_significance_tests.csv        # paired bootstrap: residual vs baselines
+results/anomaly/metrics/anomaly_extended_types_results.csv   # drift / noise_burst / stuck_with_jitter stress test
+results/anomaly/metrics/anomaly_extended_types_summary.csv
 ```
 
 ## Threats to Validity
