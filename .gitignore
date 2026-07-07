@@ -20,6 +20,7 @@ results/logs/
 # Anomaly intermediate artifacts (aggregated residuals / val predictions)
 results/anomaly/residuals/
 results/anomaly/predictions/
+results/anomaly/multimodel_residuals/
 
 # OS
 .DS_Store
