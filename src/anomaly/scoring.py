@@ -10,26 +10,26 @@ detection, threshold-free, hybrid and cross-analysis experiments all reuse it.
 import numpy as np
 
 from src.anomaly.baselines import compute_baseline_scores, BASELINE_DETECTORS
+from src.anomaly.diagnostics import compute_flatness_score
+from src.anomaly.hybrid import hybrid_rankmax_score
 
-DETECTOR_TYPES = ("residual",) + BASELINE_DETECTORS
+DETECTOR_TYPES = ("residual",) + BASELINE_DETECTORS + ("flatness", "hybrid_rankmax")
 DEFAULT_ROLLING_WINDOW = 24
+DEFAULT_FLATNESS_WINDOW = 12
+
+
+def _flatness(series, window):
+    # Leading positions without a full window have no flatness signal -> 0.
+    return compute_flatness_score(series, window=window).fillna(0.0).to_numpy()
 
 
 def score_detector(detector_type, injected_df, val_df,
-                   rolling_window: int = DEFAULT_ROLLING_WINDOW):
-    """Return (validation_scores, test_scores) for a detector.
+                   rolling_window: int = DEFAULT_ROLLING_WINDOW,
+                   flatness_window: int = DEFAULT_FLATNESS_WINDOW):
+    """Return (validation_scores, test_scores) for a score-based detector.
 
-    Parameters
-    ----------
-    detector_type : str
-        "residual" or a baseline in BASELINE_DETECTORS.
-    injected_df : pd.DataFrame
-        Test dataframe with injected anomalies (has anomaly_score and
-        y_true_anomalous).
-    val_df : pd.DataFrame
-        Clean validation residual dataframe (has anomaly_score and y_true).
-    rolling_window : int
-        Window for the rolling_zscore baseline.
+    Supports: residual, the causal baselines, flatness, and hybrid_rankmax.
+    (hybrid_or is a threshold OR rule, handled by the experiment runner.)
     """
     if detector_type == "residual":
         return (np.asarray(val_df["anomaly_score"], dtype=float),
@@ -42,6 +42,21 @@ def score_detector(detector_type, injected_df, val_df,
         test_scores = compute_baseline_scores(
             detector_type, injected_df["y_true_anomalous"].to_numpy(),
             ref_series=ref, window=rolling_window)
+        return val_scores, test_scores
+
+    if detector_type == "flatness":
+        return (_flatness(val_df["y_true"], flatness_window),
+                _flatness(injected_df["y_true_anomalous"], flatness_window))
+
+    if detector_type == "hybrid_rankmax":
+        val_residual = np.asarray(val_df["anomaly_score"], dtype=float)
+        test_residual = np.asarray(injected_df["anomaly_score"], dtype=float)
+        val_flatness = _flatness(val_df["y_true"], flatness_window)
+        test_flatness = _flatness(injected_df["y_true_anomalous"], flatness_window)
+        val_scores = hybrid_rankmax_score(val_residual, val_flatness,
+                                          val_residual, val_flatness)
+        test_scores = hybrid_rankmax_score(test_residual, test_flatness,
+                                           val_residual, val_flatness)
         return val_scores, test_scores
 
     raise ValueError(

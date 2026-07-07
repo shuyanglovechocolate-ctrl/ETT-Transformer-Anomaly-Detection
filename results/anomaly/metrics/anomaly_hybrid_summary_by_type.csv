@@ -1,0 +1,4 @@
+anomaly_type,best_f1_detector,best_mean_f1,best_pr_auc_detector,best_mean_pr_auc
+frozen,flatness,0.2646851329056114,flatness,0.24738212085919903
+level_shift,residual,0.6379274683760994,residual,0.9955398153318709
+spike,residual,0.6036954423801022,residual,0.981040311214203

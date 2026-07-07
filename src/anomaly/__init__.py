@@ -19,6 +19,9 @@ from src.anomaly.diagnostics import (
     summarize_score_distribution, compute_causal_rolling_std,
     compute_flatness_score, compare_scores_by_label,
 )
+from src.anomaly.hybrid import (
+    rank_normalize, hybrid_rankmax_score, detect_hybrid_or,
+)
 from src.anomaly.scoring import score_detector, DETECTOR_TYPES
 from src.anomaly.threshold_free import (
     pr_auc, roc_auc, best_f1_threshold, f1_at_target_fpr,
@@ -46,6 +49,9 @@ __all__ = [
     "compare_scores_by_label",
     "score_detector",
     "DETECTOR_TYPES",
+    "rank_normalize",
+    "hybrid_rankmax_score",
+    "detect_hybrid_or",
     "pr_auc",
     "roc_auc",
     "best_f1_threshold",
