@@ -19,6 +19,11 @@ from src.anomaly.diagnostics import (
     summarize_score_distribution, compute_causal_rolling_std,
     compute_flatness_score, compare_scores_by_label,
 )
+from src.anomaly.scoring import score_detector, DETECTOR_TYPES
+from src.anomaly.threshold_free import (
+    pr_auc, roc_auc, best_f1_threshold, f1_at_target_fpr,
+    calculate_threshold_free_metrics,
+)
 
 __all__ = [
     "aggregate_residuals",
@@ -39,4 +44,11 @@ __all__ = [
     "compute_causal_rolling_std",
     "compute_flatness_score",
     "compare_scores_by_label",
+    "score_detector",
+    "DETECTOR_TYPES",
+    "pr_auc",
+    "roc_auc",
+    "best_f1_threshold",
+    "f1_at_target_fpr",
+    "calculate_threshold_free_metrics",
 ]

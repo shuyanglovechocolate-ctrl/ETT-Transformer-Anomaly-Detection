@@ -23,8 +23,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.anomaly import (
     inject_synthetic_anomalies, compute_threshold, detect_anomalies,
-    calculate_detection_metrics, load_prediction_file, compute_baseline_scores,
-    calculate_event_detection_metrics,
+    calculate_detection_metrics, load_prediction_file,
+    calculate_event_detection_metrics, score_detector,
 )
 from src.anomaly.plots import plot_anomaly_detection
 
@@ -72,21 +72,9 @@ def experiment_id(dataset, model, horizon):
 
 
 def detector_scores(detector_type, injected_df, val_df):
-    """Return (validation_scores, test_scores) for a detector.
-
-    Residual detector uses the aggregated residual anomaly_score; baselines
-    score y_true causally, with thresholds referenced to validation y.
-    """
-    if detector_type == "residual":
-        return (val_df["anomaly_score"].to_numpy(),
-                injected_df["anomaly_score"].to_numpy())
-    ref = val_df["y_true"].to_numpy()
-    val_scores = compute_baseline_scores(detector_type, ref, ref_series=ref,
-                                         window=ROLLING_WINDOW)
-    test_scores = compute_baseline_scores(
-        detector_type, injected_df["y_true_anomalous"].to_numpy(),
-        ref_series=ref, window=ROLLING_WINDOW)
-    return val_scores, test_scores
+    """Thin wrapper over src.anomaly.score_detector (kept for compatibility)."""
+    return score_detector(detector_type, injected_df, val_df,
+                          rolling_window=ROLLING_WINDOW)
 
 
 def evaluate(detector_type, injected_df, val_df, threshold_method):
