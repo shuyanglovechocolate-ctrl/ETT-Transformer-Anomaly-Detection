@@ -406,6 +406,10 @@ python experiments/run_anomaly_detection.py        # detector x threshold x anom
 python experiments/summarize_anomaly_results.py    # detector / type / threshold summaries
 python experiments/run_magnitude_sensitivity.py    # F1 vs anomaly magnitude
 python experiments/diagnose_anomaly_residuals.py   # residual + frozen-flatness diagnostics
+python experiments/run_threshold_free_eval.py      # PR-AUC / ROC-AUC / best-F1 (removes threshold confound)
+python experiments/run_hybrid_detection.py         # residual + flatness hybrid detectors
+python experiments/prepare_multimodel_residuals.py # residuals for several forecasters (inference only)
+python experiments/analyze_accuracy_vs_detection.py# does lower forecasting error imply better detection?
 ```
 
 ## Key Results
@@ -433,6 +437,31 @@ sensor-stuck behaviours are **better characterised by temporal flatness than by
 residual magnitude** (anomaly/normal separation ratio ≈ 23× vs ≈ 1–4× for residual
 score). Overall, forecast residuals provide a useful but **not universal** anomaly
 signal.
+
+**Threshold-free evaluation.** Under PR-AUC (which is robust to class imbalance and
+removes the threshold-method confound), the residual detector still leads for every
+anomaly type, confirming the comparison is not a threshold artifact. ROC-AUC, by
+contrast, overstates weak baselines under imbalance (e.g. `rolling_zscore` reaches
+ROC-AUC ≈ 0.98 on spikes but PR-AUC ≈ 0.52), so PR-AUC is reported as the primary
+metric.
+
+**Hybrid residual + flatness.** Turning the flatness signal into a detector and
+combining it with the residual detector rescues frozen anomalies: the flatness
+detector raises frozen event recall from 0.43 to 0.81, and a deployable
+`residual OR flatness` rule reaches 0.86. This comes with an honest trade-off — on
+spike and level-shift anomalies the OR rule lowers F1 and raises the false-positive
+rate versus the residual detector. No single detector wins everywhere: residual
+magnitude suits magnitude-deviation anomalies, temporal flatness suits stuck sensors.
+
+**Forecasting accuracy vs detection.** Lower forecasting error does **not**
+straightforwardly imply better anomaly detection. Across six forecasters, forecasting
+MAE correlates only moderately with threshold-free separability and event recall
+(Spearman ≈ −0.48 and −0.64), but shows **essentially no correlation with the
+deployable fixed-threshold F1** (Spearman ≈ 0.00): the lowest-MAE models are not the
+best fixed-threshold detectors, because detection at an operating point depends on
+residual distribution shape and threshold calibration rather than average error.
+This mirrors the forecasting finding that added accuracy/complexity does not
+uniformly translate into practical usefulness.
 
 ## Setup
 
@@ -465,6 +494,12 @@ python experiments/run_anomaly_detection.py
 python experiments/summarize_anomaly_results.py
 python experiments/run_magnitude_sensitivity.py
 python experiments/diagnose_anomaly_residuals.py
+
+# 4. Deeper anomaly analysis (threshold-free, hybrid, accuracy-vs-detection)
+python experiments/run_threshold_free_eval.py
+python experiments/run_hybrid_detection.py
+python experiments/prepare_multimodel_residuals.py
+python experiments/analyze_accuracy_vs_detection.py
 ```
 
 Heavy artifacts (checkpoints, per-run predictions, logs, most figures) are
@@ -490,6 +525,11 @@ results/anomaly/metrics/anomaly_event_summary_by_type.csv
 results/anomaly/metrics/anomaly_magnitude_sensitivity.csv
 results/anomaly/metrics/frozen_flatness_diagnostics.csv
 results/anomaly/metrics/residual_diagnostics.csv
+results/anomaly/metrics/anomaly_threshold_free_results.csv     # PR-AUC / ROC-AUC / best-F1
+results/anomaly/metrics/anomaly_hybrid_results.csv             # residual + flatness hybrid detectors
+results/anomaly/metrics/anomaly_hybrid_summary_by_type.csv
+results/anomaly/metrics/accuracy_vs_detection.csv             # forecasting accuracy vs detection
+results/anomaly/metrics/accuracy_detection_correlation.csv
 ```
 
 ## Limitations and Future Work
