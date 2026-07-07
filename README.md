@@ -578,6 +578,41 @@ signals, and conclusions drawn from idealised synthetic anomalies do not automat
 transfer to more realistic faults** — exactly the construct-validity caveat stated under
 Threats to Validity.
 
+## Discussion
+
+The central finding of this project is that **model complexity, forecasting accuracy and
+anomaly-detection usefulness are related but not interchangeable**. Under the controlled
+ETT oil-temperature forecasting protocol, linear-family models provide the strongest
+forecasting results among the tested models. The efficiency analysis further strengthens
+this conclusion: these models also require fewer parameters and smaller checkpoint
+artefacts than the recurrent and Transformer baselines. The practical implication is
+therefore not only that simple models can be competitive, but that they may offer a
+stronger accuracy-complexity trade-off in this setting.
+
+The anomaly-detection results add an important qualification to the forecasting findings.
+Better forecasting accuracy can improve residual separability, but it does not
+automatically lead to stronger fixed-threshold detection. Deployable anomaly detection
+depends on the shape of the residual distribution, the transferability of
+validation-derived thresholds and the anomaly mechanism itself, not only on average
+prediction error. This explains why the lowest-MAE forecaster is not necessarily the
+strongest detector under a fixed threshold.
+
+The extended anomaly experiments further show that anomaly mechanism matters. Residual
+magnitude is useful for magnitude-deviation behaviours such as spike, level shift and
+gradual drift, although drift may be detected only after the offset has accumulated.
+Local difference scores can be more suitable for high-frequency noise bursts, while
+flatness-based signals are useful for idealised frozen-value behaviour but do not
+automatically transfer to stuck sensors with jitter. These findings reinforce the
+construct-validity caution that synthetic anomaly results should be interpreted as
+controlled stress tests rather than direct evidence of real fault-detection performance.
+
+Overall, this project contributes less as a new state-of-the-art detector and more as a
+leakage-free, reproducible empirical framework for analysing when forecasting residuals
+are useful, when they fail and what complementary signals may be required. The mixed and
+negative findings are therefore part of the contribution: they show that practical
+time-series monitoring cannot be inferred from model complexity or forecasting accuracy
+alone.
+
 ## Setup
 
 ```bash
