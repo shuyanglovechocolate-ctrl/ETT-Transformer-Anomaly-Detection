@@ -16,21 +16,59 @@ residual signal is effective and where it fails.
 > oil temperature and detect synthetic anomalies on ETT datasets, while assessing
 > whether complex deep-learning models outperform simpler linear baselines?
 
+## Related Work and Positioning
+
+Time-series anomaly detection has been studied extensively. Reconstruction- and
+representation-based deep detectors (e.g. OmniAnomaly, USAD) and attention-based
+detectors (e.g. the Anomaly Transformer) are typically trained on normal data and
+evaluated on labelled multivariate anomaly benchmarks such as SMD, SMAP and MSL. In
+parallel, the ETT datasets are a standard long-sequence *forecasting* benchmark, where
+Transformer-family models (Informer, and more recent patch- or inversion-based
+architectures such as PatchTST and iTransformer) are compared against strong linear
+baselines (NLinear / DLinear, Zeng et al., AAAI 2023).
+
+This project sits deliberately between these two lines of work rather than competing
+with either. It does **not** train a dedicated detector on labelled anomaly benchmarks,
+and it does **not** aim to advance forecasting state of the art on ETT. Instead it asks
+whether the *residuals* of standard OT forecasters, produced under a single leakage-free
+protocol, carry a usable anomaly signal under controlled synthetic injection — and how
+that signal relates to forecasting accuracy.
+
+> **Positioning.** This work does not aim to propose a new state-of-the-art anomaly
+> detector. It contributes a leakage-free, reproducible empirical study connecting
+> forecasting accuracy, residual behaviour and synthetic anomaly detection on ETT.
+
+Because the problem setup differs (single-target forecasting residuals on ETT with
+synthetic injection, versus train-on-normal reconstruction on labelled multivariate
+benchmarks), the deep anomaly detectors above are **complementary references**, not
+head-to-head baselines. The baselines evaluated here are causal statistical detectors
+compared under an identical protocol (Module 4).
+
 ## Research Gap and Contribution
 
-Although ETT datasets are widely used for time-series forecasting, there remains
-room for a focused and reproducible study that **connects OT forecasting with
-residual-based anomaly detection**, while comparing strong simple baselines against
-recurrent and Transformer models under a single leakage-free protocol.
+The gap addressed here is not a lack of anomaly-detection methods in general. It is that
+the ETT forecasting benchmark and residual-based anomaly detection are rarely connected
+**systematically under one leakage-free protocol** — with matched causal baselines,
+threshold-free evaluation, event-wise metrics and residual diagnostics — so that the
+relationship between forecasting accuracy and detection usefulness can be examined
+directly.
 
 This project contributes:
 
-- a leakage-free, config-driven data and training pipeline (Modules 1–2);
-- a systematic forecasting comparison with per-horizon analysis and paired
-  bootstrap significance testing (Module 3);
-- a residual-based synthetic anomaly-detection framework with causal statistical
-  baselines, multi-seed robustness, event-wise evaluation and diagnostics
-  (Module 4).
+1. a **unified forecasting-to-residual framework** with a leakage-free, config-driven
+   data and training pipeline (Modules 1–2);
+2. a **controlled comparison** of simple, recurrent and Transformer forecasters with
+   per-horizon analysis and paired bootstrap significance testing (Module 3);
+3. **residual-based synthetic anomaly detection** with causal statistical baselines,
+   validation-only thresholding, multi-seed robustness and event-wise evaluation
+   (Module 4);
+4. **threshold-free, event-wise and hybrid residual–flatness analysis** that separates
+   genuine detectability from threshold artefacts and rescues stuck-sensor anomalies;
+5. an **accuracy-vs-detection cross-analysis** showing that lower forecasting error does
+   not straightforwardly translate into better anomaly detection.
+
+The emphasis throughout is **leakage-free reproducibility and honest negative results**
+rather than maximal detection scores.
 
 ## Dataset
 
@@ -425,6 +463,17 @@ decay, higher dropout) reduced deep-model variance but did **not** change the
 ranking. Adding load covariates (multivariate) did not consistently improve OT
 forecasting over univariate input.
 
+**Interpretation and caveats.** These results should **not** be read as evidence that
+Transformer models are generally unsuitable for ETT forecasting. The Transformer used
+here is a vanilla encoder-style architecture trained under a controlled, equal-budget
+protocol with light hyper-parameter tuning, rather than a modern long-sequence
+architecture such as PatchTST or iTransformer. The regularized robustness check reduces
+deep-model variance but is a robustness probe, not a full hyper-parameter search. The
+conclusion is therefore scoped to the tested setting: **within this controlled,
+equal-budget protocol, linear-family models are a stronger and cheaper default**, and
+evaluating modern patch/inversion-based Transformers under the same budget is left as
+future work.
+
 ### Anomaly detection (Module 4)
 
 The residual-based detector **outperformed the causal statistical baselines** across
@@ -532,14 +581,34 @@ results/anomaly/metrics/accuracy_vs_detection.csv             # forecasting accu
 results/anomaly/metrics/accuracy_detection_correlation.csv
 ```
 
+## Threats to Validity
+
+**Construct validity.** ETT has no ground-truth anomaly labels, so anomalies are injected
+synthetically (spike / level_shift / frozen) into `y_true`. The results therefore
+demonstrate **controlled detectability under known injected behaviours**, not guaranteed
+performance on real transformer faults, whose statistics (slow drift, correlated
+multi-sensor failures, seasonality-coupled deviations) may differ. Detection difficulty is
+also partly a function of the injected magnitude; the magnitude-sensitivity experiment
+(`run_magnitude_sensitivity.py`) is included precisely to bound this claim rather than to
+report a single operating point.
+
+**Internal validity.** The protocol is designed to avoid leakage: thresholds are learned
+only from validation residuals, the rolling baselines are strictly causal, scaling is fit
+on training data only, and injected test labels are never used for threshold calibration.
+Forecasting comparisons use paired bootstrap confidence intervals over per-window errors.
+
+**External validity.** Experiments focus on ETTh1 / ETTh2, `input_len=96` and selected
+horizons (24 / 48 / 96). Generalisation to minute-level ETTm1 / ETTm2, other transformers,
+additional seeds and — crucially — real labelled fault data remains untested.
+
 ## Limitations and Future Work
 
-- **Synthetic anomalies.** ETT has no ground-truth anomaly labels, so anomalies are
-  injected synthetically. Results describe detectability of controlled anomaly types,
-  not real-world faults.
-- **Frozen anomalies need extra features.** Residual magnitude alone is insufficient
-  for sensor-stuck behaviours; a temporal-flatness feature is a natural complement.
-- **Scope.** The core study uses ETTh1/ETTh2 at `input_len=96`. Future work could add
-  minute-level ETTm1/ETTm2 (frequency effect), an `input_len` ablation, more seeds,
-  training-time/efficiency benchmarks, and a full decomposition/channel-independent
-  DLinear or patch-based Transformer.
+- **Frozen anomalies need extra features.** Residual magnitude alone is insufficient for
+  sensor-stuck behaviours; the temporal-flatness feature is a natural complement and is
+  already exploited by the hybrid detector.
+- **Deep-model budget.** A full hyper-parameter search and modern patch/inversion-based
+  Transformers (PatchTST, iTransformer) under the same equal-budget protocol would
+  strengthen the forecasting comparison.
+- **Scope.** Future work could add minute-level ETTm1 / ETTm2 (frequency effect), an
+  `input_len` ablation, more seeds, training-time/efficiency benchmarks, a full
+  decomposition/channel-independent DLinear, and evaluation on real fault labels.
