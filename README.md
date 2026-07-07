@@ -44,6 +44,17 @@ benchmarks), the deep anomaly detectors above are **complementary references**, 
 head-to-head baselines. The baselines evaluated here are causal statistical detectors
 compared under an identical protocol (Module 4).
 
+The table below positions the repository against the main lines of related work;
+per-work citations are collected under [References](#references). It is a positioning
+aid, **not** a substitute for the full dissertation literature review.
+
+| Area | Representative work | Typical setting | Relevance to this project |
+|---|---|---|---|
+| Long-term forecasting Transformers | Informer, PatchTST, iTransformer | Forecasting benchmarks, often multivariate long-horizon settings | This project compares a controlled vanilla Transformer baseline rather than modern specialised Transformer forecasters. |
+| Linear forecasting baselines | DLinear / NLinear | Long-term time-series forecasting benchmarks | Motivates the comparison between simple linear-family models and deeper architectures. |
+| Deep anomaly detection | OmniAnomaly, USAD, Anomaly Transformer | Train-on-normal or unsupervised multivariate anomaly detection benchmarks such as SMD / SMAP / MSL | These methods address a different anomaly-detection setting from this project's forecasting-residual synthetic injection protocol. |
+| Forecasting-residual detection | Residual scoring and validation-threshold monitoring | Forecast first, detect from residual deviations | This is the empirical setting studied here. |
+
 ## Research Gap and Contribution
 
 The gap addressed here is not a lack of anomaly-detection methods in general. It is that
@@ -674,3 +685,16 @@ additional seeds and — crucially — real labelled fault data remains untested
 - **Scope.** Future work could add minute-level ETTm1 / ETTm2 (frequency effect), an
   `input_len` ablation, more seeds, training-time/efficiency benchmarks, a full
   decomposition/channel-independent DLinear, and evaluation on real fault labels.
+
+## References
+
+The references below are included to position the repository and are **not** a
+substitute for the full dissertation literature review.
+
+- Audibert, J., Michiardi, P., Guyard, F., Marti, S., & Zuluaga, M. A. (2020). USAD: UnSupervised Anomaly Detection on Multivariate Time Series. KDD 2020.
+- Liu, Y., Hu, T., Zhang, H., Wu, H., Wang, S., Ma, L., & Long, M. (2024). iTransformer: Inverted Transformers Are Effective for Time Series Forecasting. ICLR 2024.
+- Nie, Y., Nguyen, N. H., Sinthong, P., & Kalagnanam, J. (2023). A Time Series is Worth 64 Words: Long-term Forecasting with Transformers. ICLR 2023.
+- Su, Y., Zhao, Y., Niu, C., Liu, R., Sun, W., & Pei, D. (2019). Robust Anomaly Detection for Multivariate Time Series through Stochastic Recurrent Neural Network. KDD 2019.
+- Xu, J., Wu, H., Wang, J., & Long, M. (2022). Anomaly Transformer: Time Series Anomaly Detection with Association Discrepancy. ICLR 2022.
+- Zeng, A., Chen, M., Zhang, L., & Xu, Q. (2023). Are Transformers Effective for Time Series Forecasting? AAAI 2023.
+- Zhou, H., Zhang, S., Peng, J., Zhang, S., Li, J., Xiong, H., & Zhang, W. (2021). Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting. AAAI 2021.
