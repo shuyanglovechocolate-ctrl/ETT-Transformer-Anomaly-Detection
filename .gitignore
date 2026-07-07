@@ -23,9 +23,11 @@ results/anomaly/predictions/
 results/anomaly/multimodel_residuals/
 
 # Per-run intermediate artifacts (regenerate with the matrix runners / analysis).
-# Committed EDA figures (results/figures/eda_*.png) stay tracked; only per-run
-# forecast/loss plots and per-run metric snapshots are ignored.
+# Only per-run forecast/loss plots and per-run metric snapshots are ignored;
+# committed EDA and efficiency figures are re-included via the negations below.
 results/figures/*.png
+!results/figures/eda_*.png
+!results/figures/efficiency_*.png
 results/metrics/*_metrics.json
 results/metrics/per_horizon_metrics.csv
 

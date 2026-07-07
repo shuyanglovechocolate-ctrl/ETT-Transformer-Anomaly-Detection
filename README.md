@@ -414,6 +414,7 @@ python experiments/run_matrix.py --matrix core-light   # 4 light models x 2 data
 python experiments/run_matrix.py --matrix core-deep     # LSTM/Transformer, multivariate
 python experiments/summarize_results.py                 # comparison tables (deduped by experiment_id)
 python experiments/analyze_forecasting_results.py       # per-horizon metrics, best model, bootstrap significance
+python experiments/analyze_efficiency_complexity.py     # accuracy vs parameters / checkpoint size (post-hoc)
 python experiments/validate_results.py                  # completeness / consistency checks
 ```
 
@@ -474,6 +475,20 @@ conclusion is therefore scoped to the tested setting: **within this controlled,
 equal-budget protocol, linear-family models are a stronger and cheaper default**, and
 evaluating modern patch/inversion-based Transformers under the same budget is left as
 future work.
+
+**Efficiency and complexity.** The accuracy advantage of the linear family is not
+bought with extra capacity — it is a joint win on both axes. The best linear models
+(NLinear, DLinear, Linear) reach the lowest mean MAE (≈ 2.72–2.77) with the fewest
+trainable parameters (≈ 16k–32k) and the smallest checkpoints (≈ 0.25–0.50 MB), while
+the Transformer (≈ 69k parameters, ≈ 0.87 MB) and LSTM (≈ 53k parameters, ≈ 0.65 MB)
+are both larger **and** less accurate (mean MAE ≈ 2.96 and 3.44). The linear family
+therefore **Pareto-dominates** the deep baselines here: lower error at a fraction of the
+parameters and storage. This strengthens the practical reading of the forecasting
+results — under the tested protocol, model complexity does not translate into better
+ETT oil-temperature forecasting, and the cheaper models are also the more deployable
+ones. (See `efficiency_complexity_summary.csv`; the per-1k-parameter column is reported
+for transparency only and is **not** used as an efficiency ranking, since dividing error
+by parameter count mechanically favours larger models.)
 
 ### Anomaly detection (Module 4)
 
@@ -548,6 +563,7 @@ python experiments/run_matrix.py --matrix core-deep  --skip-existing
 python experiments/run_matrix.py --matrix robustness-deep --skip-existing
 python experiments/summarize_results.py
 python experiments/analyze_forecasting_results.py
+python experiments/analyze_efficiency_complexity.py
 
 # 3. Module 4 anomaly detection
 python experiments/prepare_anomaly_residuals.py
@@ -576,6 +592,7 @@ results/metrics/model_comparison.csv
 results/metrics/per_horizon_summary.csv
 results/metrics/model_significance_tests.csv
 results/metrics/best_model_by_dataset_horizon.csv
+results/metrics/efficiency_complexity_summary.csv
 ```
 
 Anomaly detection:

@@ -18,6 +18,9 @@ the root `README.md`.
 - `per_horizon_summary.csv` — per-horizon metrics aggregated across seeds.
 - `best_model_by_dataset_horizon.csv` — best model per (dataset, input type, horizon).
 - `model_significance_tests.csv` — paired bootstrap CIs on per-window MAE differences.
+- `efficiency_complexity_summary.csv` — accuracy vs parameter count / checkpoint size per
+  (dataset, model, input type, horizon). The `mae_per_1k_params` column is transparency
+  only, not an efficiency ranking (dividing error by parameters favours larger models).
 - `eda_summary_statistics.csv`, `data_pipeline_ETTh1_multivariate_h24.json`,
   `result_validation_report.json` — EDA / pipeline / validation snapshots.
 
@@ -45,6 +48,7 @@ the root `README.md`.
 
 ### Figures
 - `results/figures/eda_*.png` — committed EDA figures.
+- `results/figures/efficiency_*.png` — committed efficiency/complexity figures.
 - `results/anomaly/figures/*.png` — committed representative anomaly figures.
 
 ## Regenerable intermediate artefacts (git-ignored)
