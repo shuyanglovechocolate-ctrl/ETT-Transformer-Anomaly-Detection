@@ -1,6 +1,6 @@
 """Summarize anomaly detection results into compact tables (Module 6.6).
 
-Reads results/anomaly/metrics/anomaly_detection_results_v2.csv and writes:
+Reads results/anomaly/metrics/anomaly_detection_results_v3.csv and writes:
 - anomaly_summary_by_detector.csv   (detector x anomaly_type mean/std metrics)
 - anomaly_summary_by_type.csv        (best detector per anomaly type)
 - anomaly_summary_by_threshold.csv   (threshold-method precision/recall tradeoff)
