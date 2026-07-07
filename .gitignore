@@ -24,3 +24,6 @@ results/anomaly/multimodel_residuals/
 
 # OS
 .DS_Store
+
+# Harness probe artifact
+__probe__.txt
