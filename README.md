@@ -448,6 +448,7 @@ python experiments/run_threshold_free_eval.py      # PR-AUC / ROC-AUC / best-F1 
 python experiments/run_hybrid_detection.py         # residual + flatness hybrid detectors
 python experiments/prepare_multimodel_residuals.py # residuals for several forecasters (inference only)
 python experiments/analyze_accuracy_vs_detection.py# does lower forecasting error imply better detection?
+python experiments/analyze_anomaly_significance.py # paired bootstrap: residual vs causal baselines
 ```
 
 ## Key Results
@@ -493,6 +494,17 @@ anomaly type, confirming the comparison is not a threshold artifact. ROC-AUC, by
 contrast, overstates weak baselines under imbalance (e.g. `rolling_zscore` reaches
 ROC-AUC ≈ 0.98 on spikes but PR-AUC ≈ 0.52), so PR-AUC is reported as the primary
 metric.
+
+**Statistical significance.** Paired bootstrap tests over matched configuration,
+aggregation and injection-seed units (36 pairs per anomaly type) confirm that the
+residual detector significantly outperforms every causal statistical baseline in
+PR-AUC and oracle best-F1 for **spike and level-shift** anomalies (bootstrap 95% CIs
+well above zero, win-rate 1.0, one-sided Wilcoxon p < 1e-6). For **frozen** anomalies
+the residual detector is still significantly ahead of the (very weak) baselines, but
+only by a small margin, with a much lower win-rate (0.50 vs `raw_zscore`, Wilcoxon
+p ≈ 0.02–0.03) and a low absolute PR-AUC (≈ 0.12). This matches the flatness
+diagnostics: residual magnitude is a poor signal for stuck sensors, which the hybrid
+detector addresses. Full results are in `anomaly_significance_tests.csv`.
 
 **Hybrid residual + flatness.** Turning the flatness signal into a detector and
 combining it with the residual detector rescues frozen anomalies: the flatness
@@ -549,6 +561,7 @@ python experiments/run_threshold_free_eval.py
 python experiments/run_hybrid_detection.py
 python experiments/prepare_multimodel_residuals.py
 python experiments/analyze_accuracy_vs_detection.py
+python experiments/analyze_anomaly_significance.py
 ```
 
 Heavy artifacts (checkpoints, per-run predictions, logs, most figures) are
@@ -579,6 +592,7 @@ results/anomaly/metrics/anomaly_hybrid_results.csv             # residual + flat
 results/anomaly/metrics/anomaly_hybrid_summary_by_type.csv
 results/anomaly/metrics/accuracy_vs_detection.csv             # forecasting accuracy vs detection
 results/anomaly/metrics/accuracy_detection_correlation.csv
+results/anomaly/metrics/anomaly_significance_tests.csv        # paired bootstrap: residual vs baselines
 ```
 
 ## Threats to Validity
