@@ -57,9 +57,15 @@ the root `README.md`.
   heavy training artefacts live in the git-ignored `results_ettm/` directory; only these
   summary tables are committed.
 
+### Sensitivity (`results/sensitivity/`)
+- `input_len_ablation.csv`, `input_len_ablation_summary.csv` — single-seed input-length
+  ablation (ETTh1, h96, `input_len` 48/96/192; NLinear/DLinear/Transformer). Heavy training
+  artefacts live in the git-ignored `results_inputlen/`; only these summaries are committed.
+
 ### Figures
 - `results/figures/eda_*.png` — committed EDA figures.
 - `results/figures/efficiency_*.png` — committed efficiency/complexity figures.
+- `results/figures/input_len_ablation_mae.png` — MAE vs input length per model.
 - `results/anomaly/figures/*.png` — committed representative anomaly figures.
 
 ## Regenerable intermediate artefacts (git-ignored)

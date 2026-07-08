@@ -28,12 +28,16 @@ results/anomaly/multimodel_residuals/
 results/figures/*.png
 !results/figures/eda_*.png
 !results/figures/efficiency_*.png
+!results/figures/input_len_ablation_*.png
 results/metrics/*_metrics.json
 results/metrics/per_horizon_metrics.csv
 
 # Isolated external-validity training run (ETTm); only the summary tables under
 # results/external_validity/ are committed, not the heavy per-run artifacts.
 results_ettm/
+
+# Isolated input-length ablation run; only results/sensitivity/ summaries committed.
+results_inputlen/
 
 # OS
 .DS_Store

@@ -519,6 +519,17 @@ shows a clearer linear-family advantage. Only the forecasting stage was evaluate
 the anomaly-detection stage on minute-level data remains future work. Results:
 `results/external_validity/ettm_forecasting_comparison.csv`.
 
+**Input-length sensitivity.** To check that the model ranking is not an artefact of the
+default `input_len=96`, the ETTh1 multivariate `horizon=96` grid was re-run at `input_len`
+48 / 96 / 192 for NLinear, DLinear and the Transformer (seed 42, isolated directory). The
+ranking is **stable**: `NLinear > DLinear > Transformer` (by MAE) at all three input
+lengths, so the linear-family advantage does not depend on the window length. The linear
+models improve slightly with a longer window (NLinear MAE 2.21 → 2.11 from 48 to 192),
+whereas the Transformer is **non-monotonic** — best at 96 (2.24) and worse at both 48
+(2.43) and 192 (2.49) — i.e. a longer window does not help it here. As a single-seed
+ablation this is indicative rather than definitive. Results:
+`results/sensitivity/input_len_ablation.csv`.
+
 ### Anomaly detection (Module 4)
 
 The residual-based detector **outperformed the causal statistical baselines** across
@@ -680,6 +691,10 @@ python experiments/run_matrix.py --matrix core-light \
   --horizons 96 --seeds 42 --results-dir results_ettm --skip-existing
 python experiments/analyze_ettm_external_validity.py
 
+# 2c. Input-length sensitivity ablation (isolated dir)
+python experiments/run_input_len_ablation.py --skip-existing
+python experiments/analyze_input_len_ablation.py
+
 # 3. Module 4 anomaly detection
 python experiments/prepare_anomaly_residuals.py
 python experiments/run_anomaly_detection.py
@@ -711,6 +726,8 @@ results/metrics/best_model_by_dataset_horizon.csv
 results/metrics/efficiency_complexity_summary.csv
 results/external_validity/ettm_forecasting_comparison.csv   # minute-level ETTm check
 results/external_validity/ettm_forecasting_verdict.csv
+results/sensitivity/input_len_ablation.csv                  # input_len 48/96/192 ranking
+results/sensitivity/input_len_ablation_summary.csv
 ```
 
 Anomaly detection:
@@ -762,9 +779,10 @@ and, crucially, real labelled fault data — remains untested.
 - **Deep-model budget.** A full hyper-parameter search and modern patch/inversion-based
   Transformers (PatchTST, iTransformer) under the same equal-budget protocol would
   strengthen the forecasting comparison.
-- **Scope.** Future work could add minute-level ETTm1 / ETTm2 (frequency effect), an
-  `input_len` ablation, more seeds, training-time/efficiency benchmarks, a full
-  decomposition/channel-independent DLinear, and evaluation on real fault labels.
+- **Scope.** The single-seed ETTm frequency check and input-length ablation reported above
+  could be extended with more seeds and horizons; further future work includes
+  training-time benchmarks, a full decomposition/channel-independent DLinear, the
+  anomaly-detection stage on ETTm, and evaluation on real fault labels.
 
 ## References
 
