@@ -21,6 +21,9 @@ the root `README.md`.
 - `efficiency_complexity_summary.csv` — accuracy vs parameter count / checkpoint size per
   (dataset, model, input type, horizon). The `mae_per_1k_params` column is transparency
   only, not an efficiency ranking (dividing error by parameters favours larger models).
+- `inference_latency_summary.csv` — forward-pass latency per model (ms per batch / per 1000
+  windows) on the ETTh1 test loader; complements the efficiency table with a deployability
+  measure. Training wall-clock time is not recorded.
 - `eda_summary_statistics.csv`, `data_pipeline_ETTh1_multivariate_h24.json`,
   `result_validation_report.json` — EDA / pipeline / validation snapshots.
 - `reproducibility_manifest.json` — environment snapshot (Python, platform, package

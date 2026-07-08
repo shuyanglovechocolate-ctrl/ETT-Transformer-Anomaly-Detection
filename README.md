@@ -506,6 +506,15 @@ ones. (See `efficiency_complexity_summary.csv`; the per-1k-parameter column is r
 for transparency only and is **not** used as an efficiency ranking, since dividing error
 by parameter count mechanically favours larger models.)
 
+**Inference latency.** A separate forward-pass timing (`inference_latency_summary.csv`,
+freshly-built models on the ETTh1 test loader) reinforces the deployability point: the
+linear family runs at ≈ 10–24 ms per 1000 windows, whereas the LSTM and Transformer are
+≈ 5–12× slower (≈ 114 and ≈ 126 ms). Latency does **not** track parameter count — the LSTM
+has fewer parameters than DLinear yet is ~5× slower, because its recurrence is sequential —
+so latency adds deployability information beyond model size. Latency is architecture-
+determined and weight-independent, so it is measured on freshly-built models; training
+wall-clock time was not recorded historically and is deliberately not reported.
+
 **External validity (minute-level ETTm).** As a lightweight single-seed check of external
 validity, the same multivariate `input_len=96`, `horizon=96` protocol was run on the
 15-minute **ETTm1 / ETTm2** datasets (Naive, Linear, NLinear, DLinear and the Transformer;
@@ -639,13 +648,22 @@ leakage-free, reproducible empirical framework for analysing when forecasting re
 are useful, when they fail and what complementary signals may be required. The mixed and
 negative findings are therefore part of the contribution: they show that practical
 time-series monitoring cannot be inferred from model complexity or forecasting accuracy
-alone.
+alone. Positioning the work as a reproducible empirical study rather than a new model is
+deliberate — the controlled comparison, leakage-free residual protocol, statistical testing
+and validity stress tests are the contribution, in the same spirit as prior
+benchmark-questioning studies of Transformer forecasters (Zeng et al., 2023).
 
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt          # readable minimal dependencies
+# or, for the exact environment the committed results were produced with:
+pip install -r requirements-lock.txt     # pinned snapshot (see reproducibility_manifest.json)
 ```
+
+`requirements.txt` lists the minimal, human-readable dependencies; `requirements-lock.txt`
+is an exact `pip freeze` snapshot for strict reproducibility. They serve different purposes
+— the lock file is not a replacement for `requirements.txt`.
 
 Tests (fast; synthetic data where possible):
 
@@ -683,6 +701,7 @@ python experiments/run_matrix.py --matrix robustness-deep --skip-existing
 python experiments/summarize_results.py
 python experiments/analyze_forecasting_results.py
 python experiments/analyze_efficiency_complexity.py
+python experiments/analyze_inference_latency.py        # forward-pass latency per model
 
 # 2b. External-validity check on minute-level ETTm (isolated dir; not the core tables)
 python experiments/run_matrix.py --matrix core-light \
@@ -724,6 +743,7 @@ results/metrics/per_horizon_summary.csv
 results/metrics/model_significance_tests.csv
 results/metrics/best_model_by_dataset_horizon.csv
 results/metrics/efficiency_complexity_summary.csv
+results/metrics/inference_latency_summary.csv               # forward-pass latency per model
 results/external_validity/ettm_forecasting_comparison.csv   # minute-level ETTm check
 results/external_validity/ettm_forecasting_verdict.csv
 results/sensitivity/input_len_ablation.csv                  # input_len 48/96/192 ranking

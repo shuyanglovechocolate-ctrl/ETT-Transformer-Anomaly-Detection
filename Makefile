@@ -2,11 +2,12 @@
 # Override the interpreter if needed, e.g. `make test PYTHON=python3.11`.
 PYTHON ?= python3
 
-.PHONY: help install test manifest reproduce-core
+.PHONY: help install install-lock test manifest reproduce-core
 
 help:
 	@echo "Targets:"
-	@echo "  install         Install Python dependencies (requirements.txt)"
+	@echo "  install         Install minimal dependencies (requirements.txt)"
+	@echo "  install-lock    Install the exact pinned environment (requirements-lock.txt)"
 	@echo "  test            Run the full pytest suite"
 	@echo "  manifest        Write results/metrics/reproducibility_manifest.json"
 	@echo "  reproduce-core  Run the full pipeline end-to-end (heavy; trains models)"
@@ -15,6 +16,9 @@ help:
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
+
+install-lock:
+	$(PYTHON) -m pip install -r requirements-lock.txt
 
 test:
 	$(PYTHON) -m pytest
