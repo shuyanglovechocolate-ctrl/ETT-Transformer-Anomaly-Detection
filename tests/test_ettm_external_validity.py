@@ -53,6 +53,18 @@ def test_verdict_flags_linear_beating_transformer():
     assert bool(v.loc["ETTm2", "linear_beats_transformer"]) is False
 
 
+def test_std_mae_reflects_seed_variance():
+    # Two runs of the same model/dataset (different seeds) collapse into one row.
+    out = build_comparison(_log([
+        _row("ETTm1", "nlinear", 0.40, 16000),
+        _row("ETTm1", "nlinear", 0.50, 16000),
+    ]))
+    r = out[out["model"] == "nlinear"].iloc[0]
+    assert r["num_runs"] == 2
+    assert r["mean_mae"] == 0.45
+    assert r["std_mae"] > 0
+
+
 def test_stray_header_row_dropped():
     df = _log([_row("ETTm1", "linear", 0.5, 16000)])
     header = {c: c for c in df.columns}

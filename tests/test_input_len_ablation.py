@@ -50,6 +50,16 @@ def test_ranking_stable_when_order_matches():
     assert set(summary["best_model"]) == {"dlinear"}
 
 
+def test_std_mae_reflects_seed_variance():
+    out = build_ablation_table(_log([
+        _row("dlinear", 96, 1.30), _row("dlinear", 96, 1.50),
+    ]))
+    r = out[out["input_len"] == 96].iloc[0]
+    assert r["num_runs"] == 2
+    assert r["mean_mae"] == 1.40
+    assert r["std_mae"] > 0
+
+
 def test_ranking_unstable_when_order_flips():
     rows = [
         _row("dlinear", 48, 1.30), _row("transformer", 48, 1.40),  # dlinear best

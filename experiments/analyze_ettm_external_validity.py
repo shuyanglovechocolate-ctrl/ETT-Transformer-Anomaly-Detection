@@ -29,7 +29,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 LINEAR_FAMILY = ("linear", "nlinear", "dlinear")
 OUTPUT_COLS = ["dataset", "model", "horizon", "input_type", "num_runs",
-               "mean_mae", "mean_rmse", "mean_wape", "total_parameters",
+               "mean_mae", "std_mae", "mean_rmse", "mean_wape", "total_parameters",
                "rank_within_dataset"]
 
 
@@ -58,6 +58,7 @@ def build_comparison(log_df: pd.DataFrame) -> pd.DataFrame:
             "dataset": dataset, "model": model, "horizon": int(horizon),
             "input_type": input_type, "num_runs": int(len(g)),
             "mean_mae": float(g["mae"].mean()),
+            "std_mae": float(g["mae"].std(ddof=1)) if len(g) > 1 else 0.0,
             "mean_rmse": float(g["rmse"].mean()),
             "mean_wape": float(g["wape"].mean()),
             "total_parameters": int(g["total_parameters"].iloc[0]),

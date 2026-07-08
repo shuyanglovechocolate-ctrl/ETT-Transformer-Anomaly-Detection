@@ -27,16 +27,17 @@ ABLATION_INPUT_LENS = [48, 96, 192]
 ABLATION_MODELS = ["nlinear", "dlinear", "transformer"]
 ABLATION_DATASET = "ETTh1"
 ABLATION_HORIZON = 96
-ABLATION_SEED = 42
+ABLATION_SEEDS = [42, 2024, 3407]
 
 
-def build_ablation_configs(input_lens=ABLATION_INPUT_LENS, models=ABLATION_MODELS):
+def build_ablation_configs(input_lens=ABLATION_INPUT_LENS, models=ABLATION_MODELS,
+                           seeds=ABLATION_SEEDS):
     configs = []
     for input_len in input_lens:
         configs.extend(build_matrix(
             models=models, datasets=[ABLATION_DATASET],
             input_types=["multivariate"], horizons=[ABLATION_HORIZON],
-            seeds=[ABLATION_SEED], input_len=input_len))
+            seeds=seeds, input_len=input_len))
     return configs
 
 

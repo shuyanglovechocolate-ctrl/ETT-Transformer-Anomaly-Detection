@@ -1,4 +1,4 @@
 input_len,best_model,ranking_best_to_worst,ranking_stable_across_input_len
-48,nlinear,nlinear > dlinear > transformer,True
-96,nlinear,nlinear > dlinear > transformer,True
-192,nlinear,nlinear > dlinear > transformer,True
+48,dlinear,dlinear > nlinear > transformer,False
+96,nlinear,nlinear > dlinear > transformer,False
+192,nlinear,nlinear > dlinear > transformer,False

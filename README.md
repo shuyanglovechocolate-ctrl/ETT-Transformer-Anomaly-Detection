@@ -515,28 +515,29 @@ so latency adds deployability information beyond model size. Latency is architec
 determined and weight-independent, so it is measured on freshly-built models; training
 wall-clock time was not recorded historically and is deliberately not reported.
 
-**External validity (minute-level ETTm).** As a lightweight single-seed check of external
-validity, the same multivariate `input_len=96`, `horizon=96` protocol was run on the
-15-minute **ETTm1 / ETTm2** datasets (Naive, Linear, NLinear, DLinear and the Transformer;
-seed 42; an isolated results directory that does not touch the core ETTh tables). The core
-finding transfers: a linear-family model has the lowest MAE on **both** datasets and beats
-the Transformer in each case (ETTm1: DLinear ≈ 1.38 vs Transformer ≈ 1.48; ETTm2: NLinear
-≈ 2.69 vs Transformer ≈ 3.27). Two honest caveats apply: this is a **single seed** (point
-estimates, no confidence intervals), and on ETTm1 the models are closely bunched — Naive is
-only third and the spread is small — so ETTm1 is a **weak** confirmation, whereas ETTm2
-shows a clearer linear-family advantage. Only the forecasting stage was evaluated on ETTm;
-the anomaly-detection stage on minute-level data remains future work. Results:
-`results/external_validity/ettm_forecasting_comparison.csv`.
+**External validity (minute-level ETTm).** As a check of external validity, the same
+multivariate `input_len=96`, `horizon=96` protocol was run on the 15-minute **ETTm1 /
+ETTm2** datasets over **three seeds** (42 / 2024 / 3407; Naive, Linear, NLinear, DLinear and
+the Transformer; an isolated results directory that does not touch the core ETTh tables).
+The core finding transfers robustly: a linear-family model has the lowest mean MAE on
+**both** datasets and beats the Transformer in each case (ETTm1: NLinear 1.39 ± 0.06 vs
+Transformer 1.50 ± 0.07; ETTm2: NLinear 2.71 ± 0.02 vs Transformer 3.15 ± 0.14), and the
+Transformer also shows the **largest seed variance**. On ETTm1 the two best linear models
+are effectively tied (NLinear 1.392 vs DLinear 1.393) and Naive is competitive (fourth), so
+ETTm1 is a close result; ETTm2 shows a clearer linear-family advantage. Only the forecasting
+stage was evaluated on ETTm; the anomaly-detection stage on minute-level data remains future
+work. Results: `results/external_validity/ettm_forecasting_comparison.csv`.
 
-**Input-length sensitivity.** To check that the model ranking is not an artefact of the
-default `input_len=96`, the ETTh1 multivariate `horizon=96` grid was re-run at `input_len`
-48 / 96 / 192 for NLinear, DLinear and the Transformer (seed 42, isolated directory). The
-ranking is **stable**: `NLinear > DLinear > Transformer` (by MAE) at all three input
-lengths, so the linear-family advantage does not depend on the window length. The linear
-models improve slightly with a longer window (NLinear MAE 2.21 → 2.11 from 48 to 192),
-whereas the Transformer is **non-monotonic** — best at 96 (2.24) and worse at both 48
-(2.43) and 192 (2.49) — i.e. a longer window does not help it here. As a single-seed
-ablation this is indicative rather than definitive. Results:
+**Input-length sensitivity.** To check that the ranking is not an artefact of the default
+`input_len=96`, the ETTh1 multivariate `horizon=96` grid was re-run at `input_len` 48 / 96 /
+192 for NLinear, DLinear and the Transformer over **three seeds** (isolated directory). The
+**Transformer ranks last at every input length** by a clear margin (mean MAE ≈ 2.38–2.61 vs
+≈ 2.11–2.23 for the linear family) and is by far the **most seed-variable** (std up to ≈ 0.28
+vs < 0.07 for the linear models), so the linear-family advantage does not depend on the
+window length. Within the linear family, NLinear and DLinear are statistically
+indistinguishable and swap order at `input_len=48`, so the strict full ordering is not
+identical across lengths — but the linear-vs-Transformer conclusion is stable. Error bars are
+shown in `results/figures/input_len_ablation_mae.png`; results in
 `results/sensitivity/input_len_ablation.csv`.
 
 ### Anomaly detection (Module 4)
@@ -786,10 +787,10 @@ on training data only, and injected test labels are never used for threshold cal
 Forecasting comparisons use paired bootstrap confidence intervals over per-window errors.
 
 **External validity.** The core study focuses on ETTh1 / ETTh2, `input_len=96` and selected
-horizons (24 / 48 / 96). A **single-seed forecasting check on minute-level ETTm1 / ETTm2**
-(reported above) confirms the linear-family advantage transfers, but broader generalisation
-— more seeds and horizons, the anomaly-detection stage on ETTm, modern Transformer variants,
-and, crucially, real labelled fault data — remains untested.
+horizons (24 / 48 / 96). **Three-seed forecasting checks on minute-level ETTm1 / ETTm2 and
+an input-length ablation** (reported above) confirm the linear-family advantage transfers,
+but broader generalisation — more seeds and horizons, the anomaly-detection stage on ETTm,
+modern Transformer variants, and, crucially, real labelled fault data — remains untested.
 
 ## Limitations and Future Work
 
@@ -799,7 +800,7 @@ and, crucially, real labelled fault data — remains untested.
 - **Deep-model budget.** A full hyper-parameter search and modern patch/inversion-based
   Transformers (PatchTST, iTransformer) under the same equal-budget protocol would
   strengthen the forecasting comparison.
-- **Scope.** The single-seed ETTm frequency check and input-length ablation reported above
+- **Scope.** The three-seed ETTm frequency check and input-length ablation reported above
   could be extended with more seeds and horizons; further future work includes
   training-time benchmarks, a full decomposition/channel-independent DLinear, the
   anomaly-detection stage on ETTm, and evaluation on real fault labels.

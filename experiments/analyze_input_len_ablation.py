@@ -26,7 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-TABLE_COLS = ["model", "input_len", "num_runs", "mean_mae", "mean_rmse",
+TABLE_COLS = ["model", "input_len", "num_runs", "mean_mae", "std_mae", "mean_rmse",
               "mean_wape", "total_parameters", "rank_within_input_len"]
 
 
@@ -53,6 +53,7 @@ def build_ablation_table(log_df: pd.DataFrame) -> pd.DataFrame:
         rows.append({
             "model": model, "input_len": int(input_len), "num_runs": int(len(g)),
             "mean_mae": float(g["mae"].mean()),
+            "std_mae": float(g["mae"].std(ddof=1)) if len(g) > 1 else 0.0,
             "mean_rmse": float(g["rmse"].mean()),
             "mean_wape": float(g["wape"].mean()),
             "total_parameters": int(g["total_parameters"].iloc[0]),
@@ -98,7 +99,9 @@ def make_figure(table: pd.DataFrame, path: str) -> None:
     fig, ax = plt.subplots(figsize=(7, 5))
     for model, g in table.groupby("model"):
         g = g.sort_values("input_len")
-        ax.plot(g["input_len"], g["mean_mae"], marker="o", label=model)
+        yerr = g["std_mae"] if "std_mae" in g else None
+        ax.errorbar(g["input_len"], g["mean_mae"], yerr=yerr, marker="o",
+                    capsize=4, label=model)
     ax.set_xlabel("Input length (past timesteps)")
     ax.set_ylabel("Mean MAE (original OT scale)")
     ax.set_title("Input-length sensitivity (ETTh1, multivariate, horizon 96)")
