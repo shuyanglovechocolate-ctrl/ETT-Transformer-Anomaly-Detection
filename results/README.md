@@ -49,6 +49,12 @@ the root `README.md`.
   construct-validity stress test on extended, more fault-like anomaly types (drift /
   noise_burst / stuck_with_jitter). Additive; does not modify the core three-type tables.
 
+### External validity (`results/external_validity/`)
+- `ettm_forecasting_comparison.csv`, `ettm_forecasting_verdict.csv` — single-seed
+  forecasting check on minute-level ETTm1 / ETTm2 (linear-family vs Transformer). The
+  heavy training artefacts live in the git-ignored `results_ettm/` directory; only these
+  summary tables are committed.
+
 ### Figures
 - `results/figures/eda_*.png` — committed EDA figures.
 - `results/figures/efficiency_*.png` — committed efficiency/complexity figures.

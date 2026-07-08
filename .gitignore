@@ -31,6 +31,10 @@ results/figures/*.png
 results/metrics/*_metrics.json
 results/metrics/per_horizon_metrics.csv
 
+# Isolated external-validity training run (ETTm); only the summary tables under
+# results/external_validity/ are committed, not the heavy per-run artifacts.
+results_ettm/
+
 # OS
 .DS_Store
 

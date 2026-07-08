@@ -502,6 +502,19 @@ ones. (See `efficiency_complexity_summary.csv`; the per-1k-parameter column is r
 for transparency only and is **not** used as an efficiency ranking, since dividing error
 by parameter count mechanically favours larger models.)
 
+**External validity (minute-level ETTm).** As a lightweight single-seed check of external
+validity, the same multivariate `input_len=96`, `horizon=96` protocol was run on the
+15-minute **ETTm1 / ETTm2** datasets (Naive, Linear, NLinear, DLinear and the Transformer;
+seed 42; an isolated results directory that does not touch the core ETTh tables). The core
+finding transfers: a linear-family model has the lowest MAE on **both** datasets and beats
+the Transformer in each case (ETTm1: DLinear ≈ 1.38 vs Transformer ≈ 1.48; ETTm2: NLinear
+≈ 2.69 vs Transformer ≈ 3.27). Two honest caveats apply: this is a **single seed** (point
+estimates, no confidence intervals), and on ETTm1 the models are closely bunched — Naive is
+only third and the spread is small — so ETTm1 is a **weak** confirmation, whereas ETTm2
+shows a clearer linear-family advantage. Only the forecasting stage was evaluated on ETTm;
+the anomaly-detection stage on minute-level data remains future work. Results:
+`results/external_validity/ettm_forecasting_comparison.csv`.
+
 ### Anomaly detection (Module 4)
 
 The residual-based detector **outperformed the causal statistical baselines** across
@@ -639,6 +652,13 @@ python experiments/summarize_results.py
 python experiments/analyze_forecasting_results.py
 python experiments/analyze_efficiency_complexity.py
 
+# 2b. External-validity check on minute-level ETTm (isolated dir; not the core tables)
+python experiments/run_matrix.py --matrix core-light \
+  --models naive linear nlinear dlinear transformer \
+  --datasets ETTm1 ETTm2 --input-types multivariate \
+  --horizons 96 --seeds 42 --results-dir results_ettm --skip-existing
+python experiments/analyze_ettm_external_validity.py
+
 # 3. Module 4 anomaly detection
 python experiments/prepare_anomaly_residuals.py
 python experiments/run_anomaly_detection.py
@@ -668,6 +688,8 @@ results/metrics/per_horizon_summary.csv
 results/metrics/model_significance_tests.csv
 results/metrics/best_model_by_dataset_horizon.csv
 results/metrics/efficiency_complexity_summary.csv
+results/external_validity/ettm_forecasting_comparison.csv   # minute-level ETTm check
+results/external_validity/ettm_forecasting_verdict.csv
 ```
 
 Anomaly detection:
@@ -705,9 +727,11 @@ only from validation residuals, the rolling baselines are strictly causal, scali
 on training data only, and injected test labels are never used for threshold calibration.
 Forecasting comparisons use paired bootstrap confidence intervals over per-window errors.
 
-**External validity.** Experiments focus on ETTh1 / ETTh2, `input_len=96` and selected
-horizons (24 / 48 / 96). Generalisation to minute-level ETTm1 / ETTm2, other transformers,
-additional seeds and — crucially — real labelled fault data remains untested.
+**External validity.** The core study focuses on ETTh1 / ETTh2, `input_len=96` and selected
+horizons (24 / 48 / 96). A **single-seed forecasting check on minute-level ETTm1 / ETTm2**
+(reported above) confirms the linear-family advantage transfers, but broader generalisation
+— more seeds and horizons, the anomaly-detection stage on ETTm, modern Transformer variants,
+and, crucially, real labelled fault data — remains untested.
 
 ## Limitations and Future Work
 
