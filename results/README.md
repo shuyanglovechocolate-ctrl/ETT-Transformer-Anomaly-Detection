@@ -23,6 +23,8 @@ the root `README.md`.
   only, not an efficiency ranking (dividing error by parameters favours larger models).
 - `eda_summary_statistics.csv`, `data_pipeline_ETTh1_multivariate_h24.json`,
   `result_validation_report.json` — EDA / pipeline / validation snapshots.
+- `reproducibility_manifest.json` — environment snapshot (Python, platform, package
+  versions, compute device, git commit); regenerate with `make manifest`.
 
 ### Anomaly detection (`results/anomaly/metrics/`)
 - `anomaly_detection_results_v3.csv` — **canonical** full fixed-threshold detection

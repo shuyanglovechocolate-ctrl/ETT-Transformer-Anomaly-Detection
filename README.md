@@ -638,6 +638,23 @@ Tests (fast; synthetic data where possible):
 pytest
 ```
 
+### Quick review (Makefile)
+
+A `Makefile` wraps the common review actions (override the interpreter with
+`PYTHON=...` if needed, e.g. `make test PYTHON=python3.11`):
+
+```bash
+make install         # pip install -r requirements.txt
+make test            # run the full pytest suite
+make manifest        # write results/metrics/reproducibility_manifest.json
+make reproduce-core  # full end-to-end pipeline (heavy; trains all models)
+```
+
+`results/metrics/reproducibility_manifest.json` records the Python, platform, package
+versions, compute device and git commit the committed results were produced with;
+`make manifest` regenerates it for the current environment. `make reproduce-core` runs
+`scripts/reproduce_core.sh`, which mirrors the "How to Reproduce" steps below.
+
 ## How to Reproduce
 
 ```bash

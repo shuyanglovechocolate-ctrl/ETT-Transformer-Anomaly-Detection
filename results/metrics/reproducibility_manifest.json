@@ -1,0 +1,24 @@
+{
+  "compute_device": "mps",
+  "generated_at": "2026-07-08T18:48:38.846764+00:00",
+  "git_commit": "adf1514183c164ff8dc6c6f4657f26305a35a2e4",
+  "package_versions": {
+    "PyYAML": "6.0.3",
+    "matplotlib": "3.10.7",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "pytest": "9.0.2",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.0",
+    "torch": "2.12.1",
+    "tqdm": "4.67.3"
+  },
+  "platform": {
+    "machine": "arm64",
+    "processor": "arm",
+    "release": "25.3.0",
+    "system": "Darwin"
+  },
+  "python_executable": "/usr/local/bin/python3.11",
+  "python_version": "3.11.0"
+}
