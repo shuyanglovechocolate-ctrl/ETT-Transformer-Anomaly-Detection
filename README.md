@@ -106,6 +106,10 @@ The forecasting target is `OT`.
 
 ## Methodology
 
+![Methodology pipeline: the four modules under a single leakage-free protocol, with the forecasting and anomaly analysis layers built on top.](docs/figures/methodology_pipeline.png)
+
+*Regenerate with `python experiments/make_methodology_diagram.py`.*
+
 The project is organised into four modules, each with pytest coverage and
 committed result snapshots:
 
