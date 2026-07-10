@@ -1,0 +1,3 @@
+layer,input_len,pooling,peak_lag,peak_attention,entropy_nats,max_entropy_nats,recent_8_mass,experiment_id
+0,96,last,3,0.04460850915775689,4.269271976097299,4.564348191467836,0.27767889744583196,ETTh1_transformer_multivariate_len96_h24_seed42
+1,96,last,0,0.036830251656632604,4.419074903174709,4.564348191467836,0.21367089725002386,ETTh1_transformer_multivariate_len96_h24_seed42

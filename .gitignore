@@ -29,6 +29,7 @@ results/figures/*.png
 !results/figures/eda_*.png
 !results/figures/efficiency_*.png
 !results/figures/input_len_ablation_*.png
+!results/figures/attention_*.png
 results/metrics/*_metrics.json
 results/metrics/per_horizon_metrics.csv
 

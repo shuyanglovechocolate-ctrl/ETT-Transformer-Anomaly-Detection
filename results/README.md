@@ -54,6 +54,11 @@ the root `README.md`.
   construct-validity stress test on extended, more fault-like anomaly types (drift /
   noise_burst / stuck_with_jitter). Additive; does not modify the core three-type tables.
 
+### Attention analysis (`results/metrics/`, exploratory / RQ4)
+- `attention_summary.csv` — per-layer summary of the trained Transformer's self-attention
+  (peak lag, entropy, recent-mass), extracted post-hoc with no re-training. Paired with
+  `results/figures/attention_by_lag.png` and `attention_last_layer_heatmap.png`.
+
 ### External validity (`results/external_validity/`)
 - `ettm_forecasting_comparison.csv`, `ettm_forecasting_verdict.csv` — single-seed
   forecasting check on minute-level ETTm1 / ETTm2 (linear-family vs Transformer). The
@@ -69,6 +74,7 @@ the root `README.md`.
 - `results/figures/eda_*.png` — committed EDA figures.
 - `results/figures/efficiency_*.png` — committed efficiency/complexity figures.
 - `results/figures/input_len_ablation_mae.png` — MAE vs input length per model.
+- `results/figures/attention_*.png` — committed exploratory attention figures (RQ4).
 - `results/anomaly/figures/*.png` — committed representative anomaly figures.
 
 ## Regenerable intermediate artefacts (git-ignored)
