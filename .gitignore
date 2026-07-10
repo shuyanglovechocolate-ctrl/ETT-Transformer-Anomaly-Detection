@@ -30,6 +30,7 @@ results/figures/*.png
 !results/figures/efficiency_*.png
 !results/figures/input_len_ablation_*.png
 !results/figures/attention_*.png
+!results/figures/tcn_comparison_*.png
 results/metrics/*_metrics.json
 results/metrics/per_horizon_metrics.csv
 
@@ -39,6 +40,9 @@ results_ettm/
 
 # Isolated input-length ablation run; only results/sensitivity/ summaries committed.
 results_inputlen/
+
+# Isolated focused TCN comparison run; only results/comparison/ summary committed.
+results_tcn/
 
 # OS
 .DS_Store

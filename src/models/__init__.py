@@ -11,6 +11,7 @@ from src.models.linear import LinearForecaster
 from src.models.nlinear import NLinearForecaster
 from src.models.dlinear import DLinearForecaster
 from src.models.lstm import LSTMForecaster
+from src.models.tcn import TCNForecaster
 from src.models.transformer import TransformerForecaster
 from src.models.factory import build_model, validate_model_config, MODEL_REGISTRY
 from src.models.utils import count_parameters, get_model_summary
@@ -22,6 +23,7 @@ __all__ = [
     "NLinearForecaster",
     "DLinearForecaster",
     "LSTMForecaster",
+    "TCNForecaster",
     "TransformerForecaster",
     "build_model",
     "validate_model_config",

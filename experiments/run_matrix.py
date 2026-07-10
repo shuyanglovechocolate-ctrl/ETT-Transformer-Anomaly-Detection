@@ -75,6 +75,10 @@ def get_default_model_config(model_name: str) -> dict:
         "nlinear": {"name": "nlinear"},
         "dlinear": {"name": "dlinear", "kernel_size": 25, "channel_independent": False},
         "lstm": {"name": "lstm", "hidden_dim": 64, "num_layers": 2, "dropout": 0.2},
+        "tcn": {
+            "name": "tcn", "num_channels": 32, "num_layers": 4, "kernel_size": 3,
+            "dropout": 0.1,
+        },
         "transformer": {
             "name": "transformer", "d_model": 64, "nhead": 4, "num_layers": 2,
             "dim_feedforward": 128, "dropout": 0.1, "pooling": "last",

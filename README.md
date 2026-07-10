@@ -313,6 +313,7 @@ AAAI 2023).
 | `nlinear` | `src/models/nlinear.py` | Subtract the last value, predict the change with a linear layer, add the last OT value back (NLinear-inspired, robust to level shifts). |
 | `dlinear` | `src/models/dlinear.py` | Decompose into trend (moving average) + seasonal and project each to the horizon. Channel-mixing by default; `channel_independent: true` uses per-channel temporal projection plus a linear mixing head. |
 | `lstm` | `src/models/lstm.py` | LSTM encoder, last hidden state projected to the horizon. |
+| `tcn` | `src/models/tcn.py` | Stacked residual blocks of dilated **causal** 1-D convolutions (dilation 1, 2, 4, …); the final-step representation is projected to the horizon. A convolutional alternative to the recurrent/attention baselines. |
 | `transformer` | `src/models/transformer.py` | Input projection + sinusoidal positional encoding + self-attention encoder + pooling + linear head. Supports `forward(x, return_attention=True)` for exploratory attention analysis. |
 
 Models are registered in `MODEL_REGISTRY` (`src/models/factory.py`), the single
@@ -361,6 +362,14 @@ model:
   hidden_dim: 64
   num_layers: 2
   dropout: 0.2
+
+# TCN (dilated causal convolutions)
+model:
+  name: tcn
+  num_channels: 32   # channels per residual block
+  num_layers: 4      # dilation doubles each block (receptive field grows 2^n)
+  kernel_size: 3     # >= 2
+  dropout: 0.1
 
 # Transformer
 model:
@@ -540,6 +549,32 @@ identical across lengths — but the linear-vs-Transformer conclusion is stable.
 shown in `results/figures/input_len_ablation_mae.png`; results in
 `results/sensitivity/input_len_ablation.csv`.
 
+**Focused convolutional comparison (TCN).** To place a convolutional model beside the
+recurrent and attention baselines, a Temporal Convolutional Network (dilated causal
+convolutions) was trained on the ETTh1 multivariate `input_len=96`, seed 42 slice at
+horizons 24 / 48 / 96 (isolated `results_tcn/`; canonical tables untouched). The TCN is
+**competitive only at the shortest horizon** — it has the lowest MAE at `h24` (1.404,
+narrowly ahead of NLinear 1.427 and Linear 1.427) but falls **behind the linear family at
+`h48` and `h96`** (rank 6/7 and 5/7), while still beating the LSTM at every horizon and the
+Transformer at `h24`. Its validation loss diverges from training loss with early stopping at
+epoch 2–12, echoing the deep-model overfitting seen elsewhere. This reinforces rather than
+overturns the main finding: a third deep architecture again fails to beat the linear family
+beyond the shortest horizon under the equal-budget protocol. Single seed, so the `h24` lead
+is indicative, not a robust claim. Results: `results/comparison/tcn_comparison.csv`,
+`results/figures/tcn_comparison_mae.png`.
+
+**Exploratory attention analysis (RQ4).** As an interpretability cue — not a causal
+explanation — the trained Transformer's self-attention was extracted over the ETTh1 test
+windows (`experiments/analyze_attention.py`, no re-training). The key distribution feeding
+the pooled (last-step) representation concentrates on the most recent steps but stays
+**close to uniform overall** (entropy ≈ 4.27–4.42 nats vs a maximum of ≈ 4.56 for a 96-step
+window; only ≈ 21–28% of the mass falls on the eight most recent steps). It also shows mild
+**periodic bumps near multiples of ~24 steps**, consistent with the diurnal cycle of the
+hourly data. In other words, the attention is diffuse rather than sharply selective, which
+fits the finding that the attention mechanism buys little forecasting advantage here over a
+plain linear map. Results: `results/metrics/attention_summary.csv`,
+`results/figures/attention_by_lag.png`, `results/figures/attention_last_layer_heatmap.png`.
+
 ### Anomaly detection (Module 4)
 
 The residual-based detector **outperformed the causal statistical baselines** across
@@ -715,6 +750,13 @@ python experiments/analyze_ettm_external_validity.py
 python experiments/run_input_len_ablation.py --skip-existing
 python experiments/analyze_input_len_ablation.py
 
+# 2d. Focused TCN comparison (isolated dir) + exploratory attention analysis
+python experiments/run_tcn_comparison.py
+python experiments/analyze_attention.py
+
+# 2e. EDA figures (regenerated headlessly with the shared publication style)
+python experiments/make_eda_figures.py
+
 # 3. Module 4 anomaly detection
 python experiments/prepare_anomaly_residuals.py
 python experiments/run_anomaly_detection.py
@@ -749,6 +791,8 @@ results/external_validity/ettm_forecasting_comparison.csv   # minute-level ETTm 
 results/external_validity/ettm_forecasting_verdict.csv
 results/sensitivity/input_len_ablation.csv                  # input_len 48/96/192 ranking
 results/sensitivity/input_len_ablation_summary.csv
+results/comparison/tcn_comparison.csv                       # focused TCN vs baselines
+results/metrics/attention_summary.csv                       # exploratory attention (RQ4)
 ```
 
 Anomaly detection:
@@ -799,7 +843,10 @@ modern Transformer variants, and, crucially, real labelled fault data — remain
   already exploited by the hybrid detector.
 - **Deep-model budget.** A full hyper-parameter search and modern patch/inversion-based
   Transformers (PatchTST, iTransformer) under the same equal-budget protocol would
-  strengthen the forecasting comparison.
+  strengthen the forecasting comparison. A convolutional baseline (TCN) has now been
+  added and, like the LSTM and Transformer, does not beat the linear family beyond the
+  shortest horizon under the equal-budget protocol; the focused TCN comparison is
+  single-seed and could be extended to the full seed/horizon grid.
 - **Scope.** The three-seed ETTm frequency check and input-length ablation reported above
   could be extended with more seeds and horizons; further future work includes
   training-time benchmarks, a full decomposition/channel-independent DLinear, the

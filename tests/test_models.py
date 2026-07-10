@@ -21,6 +21,7 @@ from src.models import (
     NLinearForecaster,
     DLinearForecaster,
     LSTMForecaster,
+    TCNForecaster,
     TransformerForecaster,
     build_model,
     validate_model_config,
@@ -169,6 +170,59 @@ def test_transformer_return_attention():
     assert attentions[0].shape == (BATCH, INPUT_LEN, INPUT_LEN)
 
 
+@pytest.mark.parametrize("num_features", [1, 7])
+def test_tcn_shape(num_features):
+    model = TCNForecaster(INPUT_LEN, num_features, HORIZON)
+    out = model(_x(num_features))
+    assert out.shape == (BATCH, HORIZON)
+    assert count_parameters(model) > 0
+
+
+def test_tcn_receptive_field_grows_with_layers():
+    # More layers -> larger receptive field -> strictly more parameters.
+    shallow = count_parameters(TCNForecaster(INPUT_LEN, 7, HORIZON, num_layers=2))
+    deep = count_parameters(TCNForecaster(INPUT_LEN, 7, HORIZON, num_layers=4))
+    assert deep > shallow
+
+
+def test_tcn_last_step_depends_on_recent_inputs():
+    # The prediction reads the representation at the final time step. Perturbing
+    # a recent input step (well inside the receptive field) must change the
+    # output; the model is deterministic in eval mode with dropout disabled.
+    torch.manual_seed(0)
+    model = TCNForecaster(INPUT_LEN, 7, HORIZON, dropout=0.0).eval()
+    x = _x(7)
+    out_a = model(x)
+    x2 = x.clone()
+    x2[:, -1, :] += 5.0
+    out_b = model(x2)
+    assert out_a.shape == out_b.shape == (BATCH, HORIZON)
+    assert not torch.allclose(out_a, out_b)
+
+
+def test_tcn_output_ignores_steps_outside_receptive_field():
+    # With num_layers=2, kernel_size=2 the receptive field is small
+    # (1 + 2*(2-1)*(2**2 - 1) = 7), far shorter than INPUT_LEN, so perturbing the
+    # earliest input step must NOT change the final-step prediction (causality +
+    # bounded receptive field).
+    torch.manual_seed(0)
+    model = TCNForecaster(INPUT_LEN, 7, HORIZON, num_layers=2, kernel_size=2,
+                          dropout=0.0).eval()
+    x = _x(7)
+    out_a = model(x)
+    x2 = x.clone()
+    x2[:, 0, :] += 5.0
+    out_b = model(x2)
+    assert torch.allclose(out_a, out_b, atol=1e-6)
+
+
+def test_tcn_rejects_bad_kernel_size():
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"name": "tcn", "kernel_size": 1}, 7))
+    with pytest.raises(ValueError):
+        validate_model_config(_config({"name": "tcn", "num_channels": 0}, 7))
+
+
 def _config(model_section, num_features):
     input_type = "univariate" if num_features == 1 else "multivariate"
     return {
@@ -188,6 +242,7 @@ def _config(model_section, num_features):
     {"name": "dlinear", "kernel_size": 25},
     {"name": "dlinear", "kernel_size": 25, "channel_independent": True},
     {"name": "lstm", "hidden_dim": 32, "num_layers": 1, "dropout": 0.1},
+    {"name": "tcn", "num_channels": 16, "num_layers": 3, "kernel_size": 3},
     {"name": "transformer", "d_model": 32, "nhead": 4, "num_layers": 1},
 ])
 def test_build_model_factory(model_section):
@@ -242,6 +297,7 @@ def test_get_model_summary_fields():
     {"name": "linear"},
     {"name": "dlinear", "kernel_size": 25},
     {"name": "lstm", "hidden_dim": 64, "num_layers": 2, "dropout": 0.2},
+    {"name": "tcn", "num_channels": 32, "num_layers": 4, "kernel_size": 3},
     {"name": "transformer", "d_model": 64, "nhead": 4, "pooling": "mean"},
 ])
 def test_validate_model_config_accepts_valid(model_section):
@@ -308,7 +364,7 @@ def test_build_model_invokes_validation():
 
 def test_model_registry_contents():
     assert set(MODEL_REGISTRY) == {
-        "naive", "linear", "nlinear", "dlinear", "lstm", "transformer"
+        "naive", "linear", "nlinear", "dlinear", "lstm", "tcn", "transformer"
     }
 
 

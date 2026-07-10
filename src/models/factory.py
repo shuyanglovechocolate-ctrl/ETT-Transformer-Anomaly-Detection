@@ -14,6 +14,7 @@ from src.models.linear import LinearForecaster
 from src.models.nlinear import NLinearForecaster
 from src.models.dlinear import DLinearForecaster
 from src.models.lstm import LSTMForecaster
+from src.models.tcn import TCNForecaster
 from src.models.transformer import TransformerForecaster
 
 # Single source of truth for supported model names -> classes.
@@ -23,6 +24,7 @@ MODEL_REGISTRY = {
     "nlinear": NLinearForecaster,
     "dlinear": DLinearForecaster,
     "lstm": LSTMForecaster,
+    "tcn": TCNForecaster,
     "transformer": TransformerForecaster,
 }
 
@@ -66,6 +68,18 @@ def validate_model_config(config: Dict[str, Any]) -> None:
         dropout = model_cfg.get("dropout", 0.2)
         if not 0 <= dropout < 1:
             raise ValueError("lstm.dropout must be in [0, 1).")
+
+    if name == "tcn":
+        if model_cfg.get("num_channels", 32) <= 0:
+            raise ValueError("tcn.num_channels must be > 0.")
+        if model_cfg.get("num_layers", 4) <= 0:
+            raise ValueError("tcn.num_layers must be > 0.")
+        kernel_size = model_cfg.get("kernel_size", 3)
+        if not isinstance(kernel_size, int) or kernel_size < 2:
+            raise ValueError("tcn.kernel_size must be an integer >= 2.")
+        dropout = model_cfg.get("dropout", 0.1)
+        if not 0 <= dropout < 1:
+            raise ValueError("tcn.dropout must be in [0, 1).")
 
     if name == "transformer":
         d_model = model_cfg.get("d_model", 64)
@@ -161,6 +175,17 @@ def build_model(
             hidden_dim=model_cfg.get("hidden_dim", 64),
             num_layers=model_cfg.get("num_layers", 2),
             dropout=model_cfg.get("dropout", 0.2),
+        )
+
+    if name == "tcn":
+        return TCNForecaster(
+            input_len=input_len,
+            num_features=num_features,
+            horizon=horizon,
+            num_channels=model_cfg.get("num_channels", 32),
+            num_layers=model_cfg.get("num_layers", 4),
+            kernel_size=model_cfg.get("kernel_size", 3),
+            dropout=model_cfg.get("dropout", 0.1),
         )
 
     if name == "transformer":

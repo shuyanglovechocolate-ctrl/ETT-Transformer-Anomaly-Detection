@@ -59,6 +59,12 @@ the root `README.md`.
   (peak lag, entropy, recent-mass), extracted post-hoc with no re-training. Paired with
   `results/figures/attention_by_lag.png` and `attention_last_layer_heatmap.png`.
 
+### Focused TCN comparison (`results/comparison/`)
+- `tcn_comparison.csv` — focused ETTh1 (multivariate, `input_len` 96, seed 42, horizons
+  24/48/96) comparison of the TCN against the linear/recurrent/attention baselines, with a
+  per-horizon rank column. Heavy TCN training artefacts live in the git-ignored
+  `results_tcn/`; only this table and `results/figures/tcn_comparison_mae.png` are committed.
+
 ### External validity (`results/external_validity/`)
 - `ettm_forecasting_comparison.csv`, `ettm_forecasting_verdict.csv` — single-seed
   forecasting check on minute-level ETTm1 / ETTm2 (linear-family vs Transformer). The
@@ -75,6 +81,7 @@ the root `README.md`.
 - `results/figures/efficiency_*.png` — committed efficiency/complexity figures.
 - `results/figures/input_len_ablation_mae.png` — MAE vs input length per model.
 - `results/figures/attention_*.png` — committed exploratory attention figures (RQ4).
+- `results/figures/tcn_comparison_mae.png` — focused TCN vs baselines by horizon.
 - `results/anomaly/figures/*.png` — committed representative anomaly figures.
 
 ## Regenerable intermediate artefacts (git-ignored)
