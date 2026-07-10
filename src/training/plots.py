@@ -8,6 +8,8 @@ matplotlib.use("Agg")  # non-interactive backend for headless saving
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from src.viz import PALETTE, apply_paper_style
+
 
 def _ensure_dir(path: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -21,6 +23,7 @@ def save_loss_curve(history: dict, path: str, title: str = "Training Loss") -> N
     explanatory annotation is drawn instead of a blank plot.
     """
     _ensure_dir(path)
+    apply_paper_style()
     train_loss = history.get("train_loss", [])
     val_loss = history.get("val_loss", [])
 
@@ -43,7 +46,7 @@ def save_loss_curve(history: dict, path: str, title: str = "Training Loss") -> N
     plt.xlabel("Epoch")
     plt.ylabel("Loss (scaled MSE)")
     plt.tight_layout()
-    plt.savefig(path, dpi=150)
+    plt.savefig(path)
     plt.close()
 
 
@@ -58,15 +61,17 @@ def save_prediction_plot(
     Selecting a single horizon_index gives a continuous, non-overlapping series.
     """
     _ensure_dir(path)
+    apply_paper_style()
     sub = df[df["horizon_index"] == horizon_index].sort_values("target_date")
 
     plt.figure(figsize=(14, 5))
-    plt.plot(sub["target_date"], sub["y_true"], label="actual")
-    plt.plot(sub["target_date"], sub["y_pred"], label="predicted", alpha=0.8)
+    plt.plot(sub["target_date"], sub["y_true"], label="actual", color="#333333")
+    plt.plot(sub["target_date"], sub["y_pred"], label="predicted",
+             color=PALETTE[1], alpha=0.85)
     plt.title(f"{title} (horizon_index={horizon_index})")
     plt.xlabel("Date")
     plt.ylabel("Oil Temperature (OT)")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(path, dpi=150)
+    plt.savefig(path)
     plt.close()

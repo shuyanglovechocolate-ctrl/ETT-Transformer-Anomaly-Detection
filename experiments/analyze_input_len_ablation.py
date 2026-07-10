@@ -94,22 +94,23 @@ def make_figure(table: pd.DataFrame, path: str) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from src.viz import apply_paper_style, color_for_model
 
+    apply_paper_style()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fig, ax = plt.subplots(figsize=(7, 5))
     for model, g in table.groupby("model"):
         g = g.sort_values("input_len")
         yerr = g["std_mae"] if "std_mae" in g else None
         ax.errorbar(g["input_len"], g["mean_mae"], yerr=yerr, marker="o",
-                    capsize=4, label=model)
+                    capsize=4, label=model, color=color_for_model(model))
     ax.set_xlabel("Input length (past timesteps)")
     ax.set_ylabel("Mean MAE (original OT scale)")
     ax.set_title("Input-length sensitivity (ETTh1, multivariate, horizon 96)")
     ax.set_xticks(sorted(table["input_len"].unique()))
     ax.legend(title="model")
-    ax.grid(True, alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=150)
+    fig.savefig(path)
     plt.close(fig)
 
 

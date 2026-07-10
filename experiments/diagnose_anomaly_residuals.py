@@ -26,6 +26,7 @@ from src.anomaly import (
     load_prediction_file, inject_synthetic_anomalies,
     summarize_score_distribution, compute_flatness_score, compare_scores_by_label,
 )
+from src.viz import PALETTE, apply_paper_style
 
 DATASETS = ["ETTh1", "ETTh2"]
 HORIZONS = [24, 96]
@@ -115,6 +116,7 @@ def run(project_root, results_dir=None):
 def _plot_distribution(residual_dir, fig_dir, best_df):
     """Histogram of validation vs test residual anomaly scores (ETTh1 h24 first)."""
     os.makedirs(fig_dir, exist_ok=True)
+    apply_paper_style()
     model = best_model_for(best_df, "ETTh1", 24)
     eid = experiment_id("ETTh1", model, 24)
     val = load_prediction_file(os.path.join(residual_dir, f"{eid}_val_residual_first.csv"))
@@ -128,31 +130,32 @@ def _plot_distribution(residual_dir, fig_dir, best_df):
     plt.ylabel("density (log)")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, "residual_score_distribution.png"), dpi=150)
+    plt.savefig(os.path.join(fig_dir, "residual_score_distribution.png"))
     plt.close()
 
 
 def _plot_frozen(injected, fig_dir):
     """Residual score vs flatness score over time for a frozen scenario."""
     os.makedirs(fig_dir, exist_ok=True)
+    apply_paper_style()
     dates = pd.to_datetime(injected["target_date"])
     is_anom = injected["is_anomaly"].to_numpy(dtype=bool)
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 7), sharex=True)
-    ax1.plot(dates, injected["anomaly_score"], color="tab:blue")
+    ax1.plot(dates, injected["anomaly_score"], color=PALETTE[0])
     ax1.scatter(dates[is_anom], injected["anomaly_score"].to_numpy()[is_anom],
-                color="red", s=12, zorder=5, label="frozen (true)")
+                color=PALETTE[1], s=16, zorder=5, label="frozen (true)")
     ax1.set_ylabel("residual score")
     ax1.set_title("Frozen anomaly: residual score is weak, flatness score is clear")
     ax1.legend(loc="upper right")
-    ax2.plot(dates, injected["flatness_score"], color="tab:green")
+    ax2.plot(dates, injected["flatness_score"], color=PALETTE[2])
     ax2.scatter(dates[is_anom], injected["flatness_score"].to_numpy()[is_anom],
-                color="red", s=12, zorder=5, label="frozen (true)")
+                color=PALETTE[1], s=16, zorder=5, label="frozen (true)")
     ax2.set_yscale("log")
     ax2.set_ylabel("flatness score (log)")
     ax2.set_xlabel("Date")
     ax2.legend(loc="upper right")
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, "frozen_flatness_diagnostic.png"), dpi=150)
+    plt.savefig(os.path.join(fig_dir, "frozen_flatness_diagnostic.png"))
     plt.close()
 
 

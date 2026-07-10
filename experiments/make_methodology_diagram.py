@@ -107,7 +107,7 @@ def save_figure(path: str) -> str:
     fig, ax = plt.subplots(figsize=(14, 8))
     draw_pipeline(ax)
     fig.tight_layout()
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     return path
 

@@ -131,15 +131,27 @@ def model_frontier(summary: pd.DataFrame, x_col: str) -> pd.DataFrame:
 
 
 def _frontier_plot(ax, summary: pd.DataFrame, x_col: str, xlabel: str):
-    import matplotlib
-    cmap = matplotlib.colormaps["tab10"]
+    from src.viz import color_for_model
     agg = model_frontier(summary, x_col)
-    for i, r in agg.iterrows():
+    prev_x = None
+    prev_y = None
+    for _, r in agg.iterrows():
         yerr = 0.0 if pd.isna(r["mae_sd"]) else r["mae_sd"]
+        color = color_for_model(r["model"])
         ax.errorbar(r["x"], r["mae"], yerr=yerr, fmt="o", ms=9, capsize=4,
-                    color=cmap(i % 10))
-        ax.annotate(r["model"], (r["x"], r["mae"]),
-                    textcoords="offset points", xytext=(8, 4), fontsize=9)
+                    color=color)
+        # Stagger the label when this point sits almost on top of the previous
+        # one (e.g. linear vs nlinear share ~the same parameter count) so the
+        # two names do not print over each other.
+        dy = 8
+        if (prev_x is not None
+                and abs(r["x"] - prev_x) / max(prev_x, 1e-9) < 0.15
+                and abs(r["mae"] - prev_y) < 0.25):
+            dy = -14
+        ax.annotate(r["model"], (r["x"], r["mae"]), color=color,
+                    textcoords="offset points", xytext=(10, dy), fontsize=9,
+                    fontweight="bold")
+        prev_x, prev_y = r["x"], r["mae"]
     ax.set_xscale("log")
     ax.set_xlabel(xlabel)
     ax.set_ylabel("Mean MAE (original OT scale)")
@@ -150,7 +162,9 @@ def make_figures(summary: pd.DataFrame, fig_dir: str) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from src.viz import apply_paper_style
 
+    apply_paper_style()
     os.makedirs(fig_dir, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -158,7 +172,7 @@ def make_figures(summary: pd.DataFrame, fig_dir: str) -> None:
     ax.set_title("Forecasting accuracy vs model complexity\n"
                  "(per-model mean; error bars = MAE std across settings)")
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "efficiency_mae_vs_params.png"), dpi=150)
+    fig.savefig(os.path.join(fig_dir, "efficiency_mae_vs_params.png"))
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -166,7 +180,7 @@ def make_figures(summary: pd.DataFrame, fig_dir: str) -> None:
     ax.set_title("Forecasting accuracy vs checkpoint size\n"
                  "(per-model mean; error bars = MAE std across settings)")
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "efficiency_mae_vs_checkpoint_size.png"), dpi=150)
+    fig.savefig(os.path.join(fig_dir, "efficiency_mae_vs_checkpoint_size.png"))
     plt.close(fig)
 
 

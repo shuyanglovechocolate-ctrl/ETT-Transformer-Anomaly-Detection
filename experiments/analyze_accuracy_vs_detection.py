@@ -139,6 +139,8 @@ def run(project_root, results_dir=None):
 
 
 def _plots(results, fig_dir):
+    from src.viz import apply_paper_style, color_for_model
+    apply_paper_style()
     os.makedirs(fig_dir, exist_ok=True)
     sub = results[(results.dataset == "ETTh1") & (results.horizon == 24)]
     agg = sub.groupby("model").mean(numeric_only=True).reindex(MODELS)
@@ -148,13 +150,14 @@ def _plots(results, fig_dir):
         for model in MODELS:
             if model in agg.index:
                 plt.scatter(agg.loc[model, "forecast_mae"], agg.loc[model, dcol],
-                            s=80, label=model)
+                            s=90, label=model, color=color_for_model(model),
+                            edgecolor="white", linewidth=0.8, zorder=3)
         plt.title(f"Forecasting MAE vs detection {dcol} (ETTh1 h24, mean over anomaly types/seeds)")
         plt.xlabel("forecasting MAE (lower = better forecast)")
         plt.ylabel(dcol)
         plt.legend()
         plt.tight_layout()
-        plt.savefig(os.path.join(fig_dir, fname), dpi=150)
+        plt.savefig(os.path.join(fig_dir, fname))
         plt.close()
 
 

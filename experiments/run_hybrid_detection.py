@@ -146,6 +146,8 @@ def _summaries(point_df, tf_df, metrics_dir):
 
 
 def _figures(point_df, pr_source, fig_dir):
+    from src.viz import PALETTE, apply_paper_style
+    apply_paper_style()
     os.makedirs(fig_dir, exist_ok=True)
     # PR curves for frozen (residual vs flatness vs hybrid_rankmax).
     if pr_source:
@@ -158,19 +160,20 @@ def _figures(point_df, pr_source, fig_dir):
         plt.ylabel("precision")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(os.path.join(fig_dir, "hybrid_frozen_pr_curve.png"), dpi=150)
+        plt.savefig(os.path.join(fig_dir, "hybrid_frozen_pr_curve.png"))
         plt.close()
 
     # Event recall by detector for frozen (mean over scenarios/seeds/thresholds).
     frozen = point_df[point_df.anomaly_type == "frozen"]
     er = frozen.groupby("detector_type")["event_recall"].mean().reindex(ALL_DETECTORS)
     plt.figure(figsize=(7, 5))
-    plt.bar(er.index, er.values, color=["tab:blue", "tab:green", "tab:orange", "tab:red"])
+    plt.bar(er.index, er.values,
+            color=[PALETTE[0], PALETTE[2], PALETTE[4], PALETTE[1]])
     plt.title("Frozen event recall by detector")
     plt.ylabel("mean event recall")
     plt.ylim(0, 1)
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, "hybrid_frozen_event_recall.png"), dpi=150)
+    plt.savefig(os.path.join(fig_dir, "hybrid_frozen_event_recall.png"))
     plt.close()
 
 

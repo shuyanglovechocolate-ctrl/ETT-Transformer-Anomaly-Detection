@@ -92,7 +92,9 @@ def _plot(results, fig_dir):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from src.viz import apply_paper_style
 
+    apply_paper_style()
     os.makedirs(fig_dir, exist_ok=True)
     for anomaly_type in SWEEP_ANOMALY_TYPES:
         sub = results[results.anomaly_type == anomaly_type]
@@ -106,7 +108,7 @@ def _plot(results, fig_dir):
         plt.ylim(0, 1)
         plt.legend()
         plt.tight_layout()
-        plt.savefig(os.path.join(fig_dir, f"magnitude_sensitivity_{anomaly_type}.png"), dpi=150)
+        plt.savefig(os.path.join(fig_dir, f"magnitude_sensitivity_{anomaly_type}.png"))
         plt.close()
 
 

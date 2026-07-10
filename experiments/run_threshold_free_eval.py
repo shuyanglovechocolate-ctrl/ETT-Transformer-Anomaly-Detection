@@ -96,6 +96,8 @@ def run(project_root, results_dir=None):
 
 
 def _plot_pr_curves(sources, fig_dir):
+    from src.viz import apply_paper_style
+    apply_paper_style()
     os.makedirs(fig_dir, exist_ok=True)
     plt.figure(figsize=(8, 6))
     for detector, (labels, scores) in sources.items():
@@ -106,7 +108,7 @@ def _plot_pr_curves(sources, fig_dir):
     plt.ylabel("precision")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, "pr_curves_spike.png"), dpi=150)
+    plt.savefig(os.path.join(fig_dir, "pr_curves_spike.png"))
     plt.close()
 
 
