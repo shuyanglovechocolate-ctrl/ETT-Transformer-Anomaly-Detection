@@ -195,7 +195,50 @@ def build_efficiency() -> None:
     write_json("efficiency.json", records)
 
 
-# --- 5. manifest + headline stats -----------------------------------------
+# --- 5. frozen failure case: the residual blind spot + flatness fix -------
+def build_frozen() -> None:
+    det_order = ["residual", "flatness", "hybrid_or"]
+    det_label = {"residual": "Residual", "flatness": "Flatness", "hybrid_or": "Hybrid (OR)"}
+    by_det = {
+        r["detector_type"]: r
+        for r in read_csv(ANOM / "anomaly_hybrid_summary_by_detector.csv")
+        if r["anomaly_type"] == "frozen"
+    }
+    detectors = []
+    for d in det_order:
+        r = by_det.get(d)
+        if not r:
+            continue
+        detectors.append(
+            {
+                "name": d,
+                "label": det_label[d],
+                "f1": num(r["mean_f1"]),
+                "recall": num(r["mean_recall"]),
+                "precision": num(r["mean_precision"]),
+                "event_recall": num(r["mean_event_recall"]),
+            }
+        )
+
+    # why residuals fail: signal separation (anomaly/normal), mean over configs
+    diag = read_csv(ANOM / "frozen_flatness_diagnostics.csv")
+    fr = [float(r["ratio_anomaly_to_normal"]) for r in diag]
+    rr = [float(r["residual_ratio_anomaly_to_normal"]) for r in diag]
+    diagnosis = {
+        "flatness_ratio": round(sum(fr) / len(fr), 1),
+        "residual_ratio": round(sum(rr) / len(rr), 2),
+    }
+
+    # contrast: the same residual detector is strong on the other anomaly types
+    by_type = {r["anomaly_type"]: r for r in read_csv(ANOM / "anomaly_summary_by_type.csv")}
+    contrast = {
+        t: num(by_type[t]["best_mean_f1"]) for t in ("spike", "level_shift") if t in by_type
+    }
+
+    write_json("frozen.json", {"detectors": detectors, "diagnosis": diagnosis, "contrast": contrast})
+
+
+# --- 6. manifest + headline stats -----------------------------------------
 def build_manifest(comparison: list[dict]) -> None:
     manifest = json.loads((METRICS / "reproducibility_manifest.json").read_text())
 
@@ -219,6 +262,7 @@ def main() -> None:
     build_predictions()
     build_anomaly()
     build_efficiency()
+    build_frozen()
     build_manifest(comparison)
     print("Done.")
 

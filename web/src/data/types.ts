@@ -68,6 +68,19 @@ export type EfficiencyRow = {
   epochs: number | null;
 };
 
+export type FrozenData = {
+  detectors: {
+    name: string;
+    label: string;
+    f1: number;
+    recall: number;
+    precision: number;
+    event_recall: number;
+  }[];
+  diagnosis: { flatness_ratio: number; residual_ratio: number };
+  contrast: Record<string, number>;
+};
+
 export type Manifest = {
   headline: {
     best_mae: number;
