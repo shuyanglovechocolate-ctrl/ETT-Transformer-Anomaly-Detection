@@ -9,6 +9,10 @@ __pycache__/
 venv/
 env/
 
+# Claude Code local dir: machine-specific launcher + regeneratable impeccable
+# skill (recreate with `npx impeccable install`). Kept out of version control.
+.claude/
+
 # Generated experiment configs (regenerate with experiments/generate_configs.py)
 configs/generated/
 
