@@ -1,7 +1,9 @@
 # ETT Showcase Site
 
-A static, dark-academic showcase for the ETT forecasting + residual anomaly
-detection thesis. Built with Vite + React + TypeScript + Tailwind + Apache
+A static showcase for the ETT forecasting + residual anomaly detection thesis,
+with an Apple-inspired academic design (light, restrained, generous whitespace —
+inspired by Apple's clarity, but in service of an academic presentation rather
+than a copy of it). Built with Vite + React + TypeScript + Tailwind + Apache
 ECharts. No backend: a Python build step turns the thesis `results/` artifacts
 into compact JSON that the site fetches at runtime, so it hosts free on GitHub
 Pages.

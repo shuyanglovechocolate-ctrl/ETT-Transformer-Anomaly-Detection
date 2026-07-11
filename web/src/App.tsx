@@ -2,6 +2,7 @@ import Hero from "./sections/Hero";
 import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
 import AnomalyDetection from "./sections/AnomalyDetection";
+import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
 
@@ -9,6 +10,7 @@ const NAV = [
   { id: "forecasting", label: "Forecasting" },
   { id: "forecast-viz", label: "Predictions" },
   { id: "anomaly", label: "Anomaly" },
+  { id: "accuracy-detection", label: "Accuracy vs Detection" },
 ];
 
 function Nav() {
@@ -80,6 +82,7 @@ export default function App() {
         <ModelComparison />
         <ForecastViz />
         <AnomalyDetection />
+        <AccuracyVsDetection />
       </main>
       <Footer />
     </div>

@@ -13,6 +13,10 @@ env/
 # skill (recreate with `npx impeccable install`). Kept out of version control.
 .claude/
 
+# impeccable's GitHub Copilot install (regeneratable, keep out of git)
+.github/hooks/
+.github/skills/
+
 # Generated experiment configs (regenerate with experiments/generate_configs.py)
 configs/generated/
 
