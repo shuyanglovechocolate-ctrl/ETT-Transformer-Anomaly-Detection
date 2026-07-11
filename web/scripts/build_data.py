@@ -175,7 +175,27 @@ def build_anomaly() -> None:
     write_json("anomaly.json", payload)
 
 
-# --- 4. manifest + headline stats -----------------------------------------
+# --- 4. efficiency: accuracy vs model complexity --------------------------
+def build_efficiency() -> None:
+    rows = read_csv(METRICS / "efficiency_complexity_summary.csv")
+    records = [
+        {
+            "dataset": r["dataset"],
+            "model": r["model"],
+            "horizon": int(r["horizon"]),
+            "input_type": r["input_type"],
+            "mae": num(r["mean_mae"]),
+            "mae_std": num(r["std_mae"]),
+            "params": int(r["total_parameters"]),
+            "checkpoint_mb": num(r["checkpoint_size_mb"], 3),
+            "epochs": num(r["mean_epochs_ran"], 1),
+        }
+        for r in rows
+    ]
+    write_json("efficiency.json", records)
+
+
+# --- 5. manifest + headline stats -----------------------------------------
 def build_manifest(comparison: list[dict]) -> None:
     manifest = json.loads((METRICS / "reproducibility_manifest.json").read_text())
 
@@ -198,6 +218,7 @@ def main() -> None:
     comparison = build_comparison()
     build_predictions()
     build_anomaly()
+    build_efficiency()
     build_manifest(comparison)
     print("Done.")
 

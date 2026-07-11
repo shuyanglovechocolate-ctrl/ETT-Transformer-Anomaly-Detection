@@ -56,6 +56,18 @@ export type AnomalyData = {
   }[];
 };
 
+export type EfficiencyRow = {
+  dataset: string;
+  model: string;
+  horizon: number;
+  input_type: "univariate" | "multivariate";
+  mae: number;
+  mae_std: number;
+  params: number;
+  checkpoint_mb: number | null;
+  epochs: number | null;
+};
+
 export type Manifest = {
   headline: {
     best_mae: number;

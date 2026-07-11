@@ -3,6 +3,7 @@ import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
 import AnomalyDetection from "./sections/AnomalyDetection";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
+import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
 
@@ -11,6 +12,7 @@ const NAV = [
   { id: "forecast-viz", label: "Predictions" },
   { id: "anomaly", label: "Anomaly" },
   { id: "accuracy-detection", label: "Accuracy vs Detection" },
+  { id: "efficiency", label: "Efficiency" },
 ];
 
 function Nav() {
@@ -83,6 +85,7 @@ export default function App() {
         <ForecastViz />
         <AnomalyDetection />
         <AccuracyVsDetection />
+        <EfficiencyComplexity />
       </main>
       <Footer />
     </div>
