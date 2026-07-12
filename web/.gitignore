@@ -9,3 +9,4 @@ dist
 
 # Generated data assets (rebuild with `npm run data`).
 public/data
+public/figures

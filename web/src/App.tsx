@@ -5,6 +5,7 @@ import AnomalyDetection from "./sections/AnomalyDetection";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import FrozenFailure from "./sections/FrozenFailure";
+import AttentionAnalysis from "./sections/AttentionAnalysis";
 import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
 
@@ -15,6 +16,7 @@ const NAV = [
   { id: "accuracy-detection", label: "Acc. vs Detection" },
   { id: "efficiency", label: "Efficiency" },
   { id: "frozen", label: "Frozen" },
+  { id: "attention", label: "Attention" },
 ];
 
 function Nav() {
@@ -89,6 +91,7 @@ export default function App() {
         <AccuracyVsDetection />
         <EfficiencyComplexity />
         <FrozenFailure />
+        <AttentionAnalysis />
       </main>
       <Footer />
     </div>

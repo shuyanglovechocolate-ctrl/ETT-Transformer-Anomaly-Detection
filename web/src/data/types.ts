@@ -81,6 +81,20 @@ export type FrozenData = {
   contrast: Record<string, number>;
 };
 
+export type AttentionData = {
+  layers: {
+    layer: number;
+    peak_lag: number;
+    peak_attention: number;
+    entropy: number;
+    max_entropy: number;
+    recent_8_mass: number;
+  }[];
+  experiment_id: string | null;
+  input_len: number;
+  figures: { by_lag: string; heatmap: string };
+};
+
 export type Manifest = {
   headline: {
     best_mae: number;

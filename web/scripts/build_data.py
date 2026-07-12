@@ -15,6 +15,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import shutil
 from collections import defaultdict
 from pathlib import Path
 
@@ -24,7 +25,13 @@ RESULTS = REPO_ROOT / "results"
 METRICS = RESULTS / "metrics"
 ANOM = RESULTS / "anomaly" / "metrics"
 PRED_DIR = RESULTS / "predictions"
+FIGURES = RESULTS / "figures"
 OUT = REPO_ROOT / "web" / "public" / "data"
+FIG_OUT = REPO_ROOT / "web" / "public" / "figures"
+
+# Committed result figures shown as static images on the site (no CSV exists
+# for these). Copied into public/figures/ so Vite serves them.
+COPY_FIGURES = ["attention_by_lag.png", "attention_last_layer_heatmap.png"]
 
 # Representative forecast series to expose in the interactive chart.
 # Kept small on purpose: one seed / horizon per (dataset, model, input_type).
@@ -238,7 +245,46 @@ def build_frozen() -> None:
     write_json("frozen.json", {"detectors": detectors, "diagnosis": diagnosis, "contrast": contrast})
 
 
-# --- 6. manifest + headline stats -----------------------------------------
+# --- 6. attention analysis (supplementary) + static figures ---------------
+def build_attention() -> None:
+    rows = read_csv(METRICS / "attention_summary.csv")
+    layers = [
+        {
+            "layer": int(r["layer"]),
+            "peak_lag": int(r["peak_lag"]),
+            "peak_attention": num(r["peak_attention"]),
+            "entropy": num(r["entropy_nats"], 3),
+            "max_entropy": num(r["max_entropy_nats"], 3),
+            "recent_8_mass": num(r["recent_8_mass"]),
+        }
+        for r in rows
+    ]
+    write_json(
+        "attention.json",
+        {
+            "layers": layers,
+            "experiment_id": rows[0]["experiment_id"] if rows else None,
+            "input_len": int(rows[0]["input_len"]) if rows else 96,
+            "figures": {
+                "by_lag": "figures/attention_by_lag.png",
+                "heatmap": "figures/attention_last_layer_heatmap.png",
+            },
+        },
+    )
+
+
+def build_figures() -> None:
+    FIG_OUT.mkdir(parents=True, exist_ok=True)
+    for name in COPY_FIGURES:
+        src = FIGURES / name
+        if src.exists():
+            shutil.copy2(src, FIG_OUT / name)
+            print(f"  copied figure {name}")
+        else:
+            print(f"  skip (missing figure) {name}")
+
+
+# --- 7. manifest + headline stats -----------------------------------------
 def build_manifest(comparison: list[dict]) -> None:
     manifest = json.loads((METRICS / "reproducibility_manifest.json").read_text())
 
@@ -263,6 +309,8 @@ def main() -> None:
     build_anomaly()
     build_efficiency()
     build_frozen()
+    build_attention()
+    build_figures()
     build_manifest(comparison)
     print("Done.")
 

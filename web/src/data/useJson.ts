@@ -6,6 +6,11 @@ export function dataUrl(path: string): string {
   return `${import.meta.env.BASE_URL}data/${path}`;
 }
 
+// Resolve a public/ asset path (e.g. "figures/x.png") against the Vite base.
+export function assetUrl(path: string): string {
+  return `${import.meta.env.BASE_URL}${path}`;
+}
+
 type State<T> = { data: T | null; loading: boolean; error: string | null };
 
 export function useJson<T>(path: string): State<T> {
