@@ -672,6 +672,22 @@ signals, and conclusions drawn from idealised synthetic anomalies do not automat
 transfer to more realistic faults** — exactly the construct-validity caveat stated under
 Threats to Validity.
 
+## Findings at a Glance
+
+The table maps each sub-question of the overall research question to the experiment that
+addresses it, the headline result, and the conclusion. It is a navigation aid; the exact
+figures, caveats and result files are in the sections above.
+
+| # | Sub-question | Experiment(s) | Headline result | Conclusion |
+| --- | --- | --- | --- | --- |
+| 1 | Do complex deep models beat simple linear baselines for OT forecasting? | 6-model core matrix (ETTh1/2 × uni/multi × h24/48/96 × 3 seeds) with paired bootstrap CIs | Linear family wins **all 36** multivariate comparisons; LSTM/Transformer never lead | Under this equal-budget protocol, linear-family models are the stronger default |
+| 2 | Is the linear advantage just lower capacity or a setup artefact? | Efficiency/complexity + inference latency + input-length ablation (3 seeds) + ETTm external-validity (3 seeds) | Linear **Pareto-dominates** (lower MAE, ~16–32k params, 5–12× faster); ranking stable across input lengths and transfers to ETTm | The advantage is robust, not a capacity- or window-length artefact |
+| 3 | Does a convolutional model change the picture? | Focused TCN comparison, ETTh1 h24/48/96 (single seed, exploratory) | TCN best at h24 but behind the linear family at h48/h96; beats LSTM throughout | A third deep family again fails to beat linear beyond the shortest horizon (indicative) |
+| 4 | Do forecast residuals carry an anomaly signal, and for which types? | Residual detector on spike / level-shift / frozen injection; threshold-free + event metrics; significance tests | Strong on spike / level-shift; **weak on frozen** (residual blind spot) | Residuals are usable for magnitude-deviation anomalies, not flatness anomalies |
+| 5 | Does better forecasting accuracy imply better detection? | Accuracy-vs-detection cross-analysis (MAE vs PR-AUC / fixed-F1) | Weak / no correlation; the best forecaster is **not** the best detector | Detection quality cannot be inferred from forecasting accuracy |
+| 6 | Can the frozen blind spot be fixed, and does it generalise? | Temporal-flatness diagnostic + hybrid detector; magnitude sensitivity; extended anomaly types | Flatness recovers frozen and the hybrid combines both, but flatness does **not** transfer to stuck-with-jitter | Complementary signals are needed; no single detector is universally best |
+| 7 | Where does the Transformer attend? (RQ4, exploratory) | Post-hoc self-attention extraction over ETTh1 test windows (no re-training) | Attention is diffuse (entropy near maximum) with mild ~24-step (daily) periodicity | Attention is not sharply selective here, consistent with its limited gain over a linear map |
+
 ## Discussion
 
 The central finding of this project is that **model complexity, forecasting accuracy and
@@ -699,6 +715,8 @@ flatness-based signals are useful for idealised frozen-value behaviour but do no
 automatically transfer to stuck sensors with jitter. These findings reinforce the
 construct-validity caution that synthetic anomaly results should be interpreted as
 controlled stress tests rather than direct evidence of real fault-detection performance.
+
+### Why this is an empirical rather than an algorithmic contribution
 
 Overall, this project contributes less as a new state-of-the-art detector and more as a
 leakage-free, reproducible empirical framework for analysing when forecasting residuals

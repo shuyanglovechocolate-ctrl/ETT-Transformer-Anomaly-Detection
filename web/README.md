@@ -53,8 +53,14 @@ Generated `public/data/` is git-ignored; CI regenerates it on every deploy.
 ## Sections
 
 1. **Hero** — headline metrics (bento grid)
-2. **Forecasting** — interactive MAE comparison across models / datasets / horizons
-3. **Predictions** — actual vs. predicted oil temperature with zoom
-4. **Anomaly** — residual detector performance by anomaly type, incl. the frozen failure mode
+2. **EDA** — dataset background: OT trend, feature series and correlation structure
+3. **Forecasting** — interactive MAE comparison across models / datasets / horizons
+4. **Predictions** — actual vs. predicted oil temperature with zoom
+5. **Anomaly** — residual detector performance by anomaly type
+6. **Accuracy vs. detection** — forecasting accuracy vs. detection quality scatter
+7. **Efficiency** — accuracy vs. model complexity (parameters / checkpoint size)
+8. **Frozen failure** — the residual blind spot and the temporal-flatness fix
+9. **Attention analysis** — exploratory Transformer attention over input lags
 
-Planned: EDA, accuracy-vs-detection scatter, efficiency, attention analysis.
+A closing **Citation** block completes the page. All sections listed above are
+implemented; the site fetches every panel from the JSON built out of `results/`.
