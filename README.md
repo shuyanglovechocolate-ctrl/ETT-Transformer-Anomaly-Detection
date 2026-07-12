@@ -897,10 +897,9 @@ the released version over an individual commit.
 
 ## License
 
-This repository accompanies an MSc dissertation and is shared for academic
-transparency and reproducibility. A formal open-source license (MIT recommended for
-the code) will be added as a `LICENSE` file at the root; until then, please contact
-the author before reuse beyond citation.
+The code in this repository is released under the [MIT License](LICENSE) —
+© 2026 Shuyang Gao. The ETT datasets are external third-party data and remain
+subject to their own original licenses/terms.
 
 ## References
 
