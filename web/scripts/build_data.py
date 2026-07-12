@@ -127,7 +127,13 @@ def build_predictions() -> None:
             }
             write_json(f"predictions/{key}.json", series)
             index.append({"key": key, "dataset": dataset, "model": model})
-    write_json("predictions/index.json", index)
+    # The prediction source CSVs are heavy and git-ignored, so they are absent in
+    # CI. Only rewrite when we actually regenerated from source — otherwise leave
+    # the committed prediction JSON (public/data/predictions/) untouched.
+    if index:
+        write_json("predictions/index.json", index)
+    else:
+        print("  predictions: source CSVs absent — keeping committed JSON")
 
 
 # --- 3. anomaly detection --------------------------------------------------

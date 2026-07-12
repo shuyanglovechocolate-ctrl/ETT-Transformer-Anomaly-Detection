@@ -8,5 +8,9 @@ dist
 *.tsbuildinfo
 
 # Generated data assets (rebuild with `npm run data`).
-public/data
+# Most are regenerated in CI from committed results/ tables, so stay ignored.
+# EXCEPT predictions/: their source CSVs are too heavy to commit (~5MB each), so
+# the small downsampled prediction JSON are committed and CI keeps them as-is.
+public/data/*
+!public/data/predictions/
 public/figures
