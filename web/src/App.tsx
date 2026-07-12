@@ -8,6 +8,7 @@ import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import FrozenFailure from "./sections/FrozenFailure";
 import AttentionAnalysis from "./sections/AttentionAnalysis";
+import Citation from "./sections/Citation";
 import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
 
@@ -147,6 +148,7 @@ export default function App() {
         <AttentionAnalysis />
       </main>
       <Footer />
+      <Citation />
     </div>
   );
 }

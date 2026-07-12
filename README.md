@@ -1,5 +1,26 @@
 # ETT Transformer Oil Temperature Forecasting and Anomaly Detection
 
+> A research showcase accompanying the MSc dissertation *Residual-based Transformer
+> Forecasting for Oil Temperature Anomaly Detection* (University of Warwick, 2026).
+
+A unified, **leakage-free** study connecting transformer oil-temperature forecasting
+with **residual-based synthetic anomaly detection** on the ETT datasets — paired with
+an interactive companion website.
+
+**🔗 Live demo — <https://shuyanglovechocolate-ctrl.github.io/ETT-Transformer-Anomaly-Detection/>**
+
+[![ETT showcase website](docs/hero.png)](https://shuyanglovechocolate-ctrl.github.io/ETT-Transformer-Anomaly-Detection/)
+
+## Features
+
+- **Forecasting** — six models (Naive → Transformer) compared under one leakage-free, multi-seed protocol.
+- **Residual anomaly detection** — spike / level-shift / frozen synthetic injection scored from forecast residuals.
+- **Accuracy vs detection** — tests whether better forecasts imply better detection (they do not, cleanly).
+- **Efficiency** — accuracy against parameter count; linear baselines rival the Transformer at a fraction of the size.
+- **Frozen failure case** — where the residual signal fails, diagnosed, with a flatness-based fix.
+- **Attention analysis** — a descriptive look at where the Transformer allocates attention.
+- **Reproducibility** — pinned environment, chronological splits, train-only scaler, committed result tables.
+
 ## Project Overview
 
 This project builds a unified, reproducible framework that connects **transformer
@@ -851,6 +872,35 @@ modern Transformer variants, and, crucially, real labelled fault data — remain
   could be extended with more seeds and horizons; further future work includes
   training-time benchmarks, a full decomposition/channel-independent DLinear, the
   anomaly-detection stage on ETTm, and evaluation on real fault labels.
+
+## Citation
+
+If you use this work, please cite it as:
+
+> Gao, S. (2026). *Residual-based Transformer Forecasting for Oil Temperature Anomaly
+> Detection* [MSc dissertation, University of Warwick]. GitHub.
+> https://github.com/shuyanglovechocolate-ctrl/ETT-Transformer-Anomaly-Detection
+
+```bibtex
+@mastersthesis{gao2026ett,
+  author = {Shuyang Gao},
+  title  = {Residual-based Transformer Forecasting for Oil Temperature Anomaly Detection},
+  school = {University of Warwick},
+  type   = {MSc dissertation},
+  year   = {2026},
+  url    = {https://github.com/shuyanglovechocolate-ctrl/ETT-Transformer-Anomaly-Detection}
+}
+```
+
+A DOI will be assigned via Zenodo on the tagged `v1.0.0` release; please prefer citing
+the released version over an individual commit.
+
+## License
+
+This repository accompanies an MSc dissertation and is shared for academic
+transparency and reproducibility. A formal open-source license (MIT recommended for
+the code) will be added as a `LICENSE` file at the root; until then, please contact
+the author before reuse beyond citation.
 
 ## References
 
