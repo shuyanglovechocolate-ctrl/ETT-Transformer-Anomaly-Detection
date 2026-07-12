@@ -31,7 +31,14 @@ FIG_OUT = REPO_ROOT / "web" / "public" / "figures"
 
 # Committed result figures shown as static images on the site (no CSV exists
 # for these). Copied into public/figures/ so Vite serves them.
-COPY_FIGURES = ["attention_by_lag.png", "attention_last_layer_heatmap.png"]
+COPY_FIGURES = [
+    "attention_by_lag.png",
+    "attention_last_layer_heatmap.png",
+    "eda_ot_trend.png",
+    "eda_ot_distribution.png",
+    "eda_feature_timeseries.png",
+    "eda_correlation_heatmap.png",
+]
 
 # Representative forecast series to expose in the interactive chart.
 # Kept small on purpose: one seed / horizon per (dataset, model, input_type).

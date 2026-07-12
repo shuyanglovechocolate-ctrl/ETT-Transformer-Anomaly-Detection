@@ -1,4 +1,5 @@
 import Hero from "./sections/Hero";
+import EDA from "./sections/EDA";
 import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
 import AnomalyDetection from "./sections/AnomalyDetection";
@@ -10,6 +11,7 @@ import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
 
 const NAV = [
+  { id: "eda", label: "Data" },
   { id: "forecasting", label: "Forecasting" },
   { id: "forecast-viz", label: "Predictions" },
   { id: "anomaly", label: "Anomaly" },
@@ -85,6 +87,7 @@ export default function App() {
       <Nav />
       <main>
         <Hero />
+        <EDA />
         <ModelComparison />
         <ForecastViz />
         <AnomalyDetection />
