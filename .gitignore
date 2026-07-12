@@ -17,6 +17,11 @@ env/
 .github/hooks/
 .github/skills/
 
+# impeccable design-context files (local tool scaffolding)
+/PRODUCT.md
+/DESIGN.md
+.impeccable/
+
 # Generated experiment configs (regenerate with experiments/generate_configs.py)
 configs/generated/
 

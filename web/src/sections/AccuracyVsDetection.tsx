@@ -90,7 +90,7 @@ export default function AccuracyVsDetection() {
         itemStyle: {
           color: modelColors[m],
           opacity: 0.82,
-          borderColor: "#ffffff",
+          borderColor: palette.pointBorder,
           borderWidth: 0.6,
         },
       };
@@ -193,7 +193,7 @@ export default function AccuracyVsDetection() {
             hint={stats ? `AP ${stats.worst.ap.toFixed(2)}` : ""}
           />
 
-          <div className="mt-5 rounded-xl border border-accent/25 bg-accent/[0.06] p-4">
+          <div className="mt-5 rounded-xl bg-accent/[0.06] p-4">
             <p className="text-sm font-medium leading-relaxed text-ink">
               Lower forecasting error does not necessarily imply stronger anomaly
               detection performance.

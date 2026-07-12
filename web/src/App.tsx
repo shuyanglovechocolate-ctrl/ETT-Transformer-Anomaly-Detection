@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Hero from "./sections/Hero";
 import EDA from "./sections/EDA";
 import ModelComparison from "./sections/ModelComparison";
@@ -21,29 +22,78 @@ const NAV = [
   { id: "attention", label: "Attention" },
 ];
 
+const GITHUB_URL =
+  "https://github.com/shuyanglovechocolate-ctrl/ETT-Transformer-Anomaly-Detection";
+
 function Nav() {
+  const [open, setOpen] = useState(false);
   return (
     <nav className="sticky top-0 z-50 border-b border-border/60 bg-bg/80 backdrop-blur">
       <div className="mx-auto flex max-w-content items-center justify-between px-6 py-4">
         <a href="#top" className="font-mono text-sm font-medium tracking-tight text-ink">
           ETT<span className="text-accent">/</span>residual-ad
         </a>
-        <div className="hidden gap-6 md:flex">
+
+        {/* desktop links */}
+        <div className="hidden gap-6 lg:flex">
           {NAV.map((n) => (
-            <a key={n.id} href={`#${n.id}`} className="text-sm text-muted transition-colors hover:text-ink">
+            <a
+              key={n.id}
+              href={`#${n.id}`}
+              className="text-sm text-muted transition-colors hover:text-ink"
+            >
               {n.label}
             </a>
           ))}
         </div>
-        <a
-          href="https://github.com/shuyanglovechocolate-ctrl/ETT-Transformer-Anomaly-Detection"
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent/50 hover:text-ink"
-        >
-          GitHub ↗
-        </a>
+
+        <div className="flex items-center gap-2">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-accent/50 hover:text-ink"
+          >
+            GitHub ↗
+          </a>
+          {/* mobile menu toggle */}
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            aria-label="Toggle section menu"
+            className="rounded-lg border border-border p-2 text-ink lg:hidden"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              {open ? (
+                <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              ) : (
+                <path d="M2.5 5h13M2.5 9h13M2.5 13h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {/* mobile dropdown */}
+      {open && (
+        <div id="mobile-nav" className="border-t border-border/60 bg-bg px-6 py-2 lg:hidden">
+          <ul className="grid grid-cols-2 gap-1 py-2">
+            {NAV.map((n) => (
+              <li key={n.id}>
+                <a
+                  href={`#${n.id}`}
+                  onClick={() => setOpen(false)}
+                  className="block rounded-md px-3 py-2.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+                >
+                  {n.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </nav>
   );
 }

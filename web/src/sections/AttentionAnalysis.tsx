@@ -23,7 +23,6 @@ export default function AttentionAnalysis() {
   return (
     <Section
       id="attention"
-      eyebrow="Supplementary · interpretability"
       title="Where does the Transformer attend?"
       lead="A descriptive look at how the encoder distributes attention over the 96 input lags. This is context for the earlier results, not a driver of them."
       tint
@@ -91,7 +90,7 @@ export default function AttentionAnalysis() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-border bg-surface-2 p-4">
+          <div className="mt-5 rounded-xl bg-surface-2 p-4">
             <p className="text-sm leading-relaxed text-ink">
               Attention is <b>diffuse</b>: entropy sits near its maximum and no single lag holds more
               than ~{derived ? (derived.peakShare * 100).toFixed(0) : 4}% of the weight. There is a{" "}

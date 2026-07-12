@@ -32,7 +32,7 @@ export default function ModelComparison() {
 
   const option: EChartsOption = useMemo(
     () => ({
-      grid: { left: 8, right: 24, top: 20, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 24, top: 32, bottom: 8, containLabel: true },
       tooltip: {
         trigger: "axis",
         backgroundColor: palette.surface,

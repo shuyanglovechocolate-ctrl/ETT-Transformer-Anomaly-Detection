@@ -16,9 +16,9 @@
   --surface-2: 245 245 247; /* #f5f5f7 Apple section grey */
   --border: 214 214 219; /* #d6d6db hairline */
   --ink: 29 29 31; /* #1d1d1f Apple near-black */
-  --muted: 110 110 115; /* #6e6e73 secondary text */
-  --faint: 134 134 139; /* #86868b tertiary */
-  --accent: 0 113 227; /* #0071e3 Apple blue */
+  --muted: 95 96 102; /* #5f6066 secondary text — AA on white & tint */
+  --faint: 110 110 115; /* #6e6e73 tertiary/captions — AA (≥4.5:1) on white & tint */
+  --accent: 0 106 214; /* #006ad6 Apple blue — AA for small text on tint (4.78:1) */
   --accent-2: 255 149 0; /* #ff9500 Apple orange (second data series) */
 }
 
@@ -36,6 +36,37 @@
   }
   ::selection {
     @apply bg-accent/20;
+  }
+
+  /* Unified keyboard focus ring for all interactive controls (WCAG 2.4.7).
+     :focus-visible only shows for keyboard users, not mouse clicks. */
+  a:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* don't let UA also draw its own outline on top */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* Respect reduced-motion: neutralise smooth scroll and any transitions/animations.
+   Framer Motion is handled separately via <MotionConfig reducedMotion="user">. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

@@ -50,7 +50,7 @@ export default function FrozenFailure() {
           data: detectors.map((d, i) => ({
             value: d.event_recall,
             itemStyle: {
-              color: i === 0 ? "#d93a3a" : palette.accent,
+              color: i === 0 ? palette.danger : palette.accent,
               borderRadius: [3, 3, 0, 0],
             },
           })),
@@ -63,7 +63,6 @@ export default function FrozenFailure() {
   return (
     <Section
       id="frozen"
-      eyebrow="Module 4 · Honest limitation"
       title="The frozen blind spot — and a flatness fix"
       lead="The residual detector is strong on spikes and level shifts but collapses on frozen (stuck-sensor) segments. Rather than hide it, the study diagnoses why and adds a targeted fix."
     >
@@ -80,7 +79,7 @@ export default function FrozenFailure() {
           <p className="eyebrow mb-4">Why residuals fail</p>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-surface-2 p-4">
+            <div className="rounded-xl bg-surface-2 p-4">
               <p className="font-mono text-3xl font-semibold text-accent">
                 {diag ? `${diag.flatness_ratio}×` : "—"}
               </p>
@@ -88,7 +87,7 @@ export default function FrozenFailure() {
                 flatness signal, anomaly vs normal
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-surface-2 p-4">
+            <div className="rounded-xl bg-surface-2 p-4">
               <p className="font-mono text-3xl font-semibold text-faint">
                 {diag ? `${diag.residual_ratio}×` : "—"}
               </p>
@@ -119,7 +118,7 @@ export default function FrozenFailure() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-accent/25 bg-accent/[0.06] p-4">
+          <div className="mt-5 rounded-xl bg-accent/[0.06] p-4">
             <p className="text-sm leading-relaxed text-ink">
               A stuck sensor tracks its own flat value, so residuals stay small — yet the segment is
               ~{diag?.flatness_ratio ?? 24}× flatter than normal. A flatness diagnostic recovers what

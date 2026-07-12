@@ -72,7 +72,7 @@ export default function EfficiencyComplexity() {
         .filter((r) => r.model === m)
         .map((r) => [r.params, r.mae, r.checkpoint_mb ?? 0]),
       symbolSize: 15,
-      itemStyle: { color: modelColors[m], opacity: 0.9, borderColor: "#fff", borderWidth: 1 },
+      itemStyle: { color: modelColors[m], opacity: 0.9, borderColor: palette.pointBorder, borderWidth: 1 },
       ...(m === "transformer" && naive
         ? {
             markLine: {
@@ -142,7 +142,6 @@ export default function EfficiencyComplexity() {
   return (
     <Section
       id="efficiency"
-      eyebrow="Efficiency · accuracy vs complexity"
       title="Does model complexity buy accuracy?"
       lead="Oil-temperature MAE against parameter count (log scale). The dashed line is the zero-parameter Naive baseline. Points below and to the left are the sweet spot: accurate and small."
       tint
@@ -188,7 +187,7 @@ export default function EfficiencyComplexity() {
             hint={stats?.transformer ? `params · MAE ${stats.transformer.mae.toFixed(3)}` : ""}
           />
 
-          <div className="mt-5 rounded-xl border border-accent/25 bg-accent/[0.06] p-4">
+          <div className="mt-5 rounded-xl bg-accent/[0.06] p-4">
             <p className="text-sm font-medium leading-relaxed text-ink">
               More parameters did not buy accuracy — the strongest linear baseline
               matches or beats the Transformer at a fraction of its size.

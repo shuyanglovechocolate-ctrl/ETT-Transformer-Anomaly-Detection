@@ -69,7 +69,7 @@ export default function ForecastViz() {
           height: 22,
           bottom: 12,
           borderColor: palette.border,
-          fillerColor: "rgba(0,113,227,0.10)",
+          fillerColor: palette.zoomFill,
           handleStyle: { color: palette.accent },
           textStyle: { color: palette.faint },
           dataBackground: { lineStyle: { color: palette.border }, areaStyle: { color: palette.grid } },
@@ -97,7 +97,6 @@ export default function ForecastViz() {
   return (
     <Section
       id="forecast-viz"
-      eyebrow="Forecasting · one-step-ahead"
       title="See a forecaster track the real signal"
       lead="First-step predictions vs. ground-truth oil temperature on the held-out test set. Drag the slider or scroll to zoom into any window."
     >
