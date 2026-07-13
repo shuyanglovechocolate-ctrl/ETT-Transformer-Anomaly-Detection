@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Hero from "./sections/Hero";
 import EDA from "./sections/EDA";
+import MethodologyAudit from "./sections/MethodologyAudit";
 import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
 import InputLengthAblation from "./sections/InputLengthAblation";
@@ -17,6 +18,7 @@ import type { Manifest } from "./data/types";
 
 const NAV = [
   { id: "eda", label: "Data" },
+  { id: "methodology", label: "Methodology" },
   { id: "forecasting", label: "Forecasting" },
   { id: "forecast-viz", label: "Predictions" },
   { id: "input-length", label: "Input length" },
@@ -146,6 +148,7 @@ export default function App() {
       <main>
         <Hero />
         <EDA />
+        <MethodologyAudit />
         <ModelComparison />
         <ForecastViz />
         <InputLengthAblation />
