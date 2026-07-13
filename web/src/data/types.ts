@@ -31,6 +31,18 @@ export type AnomalyData = {
     mean_recall: number;
     mean_precision: number;
   }[];
+  by_threshold: {
+    method: string;
+    precision: number;
+    precision_std: number;
+    recall: number;
+    recall_std: number;
+    f1: number;
+    f1_std: number;
+    fpr: number;
+    fpr_std: number;
+    num_runs: number;
+  }[];
   threshold_free: {
     detector_type: string;
     anomaly_type: string;

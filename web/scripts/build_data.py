@@ -153,6 +153,24 @@ def build_anomaly() -> None:
         for r in read_csv(ANOM / "anomaly_summary_by_type.csv")
     ]
 
+    # thresholding rules: how the score→alarm cutoff trades precision for recall
+    # (residual detector, averaged over all anomaly types / seeds).
+    payload["by_threshold"] = [
+        {
+            "method": r["threshold_method"],
+            "precision": num(r["mean_precision"]),
+            "precision_std": num(r["std_precision"]),
+            "recall": num(r["mean_recall"]),
+            "recall_std": num(r["std_recall"]),
+            "f1": num(r["mean_f1"]),
+            "f1_std": num(r["std_f1"]),
+            "fpr": num(r["mean_false_positive_rate"]),
+            "fpr_std": num(r["std_false_positive_rate"]),
+            "num_runs": int(r["num_runs"]),
+        }
+        for r in read_csv(ANOM / "anomaly_summary_by_threshold.csv")
+    ]
+
     payload["threshold_free"] = [
         {
             "detector_type": r["detector_type"],

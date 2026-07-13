@@ -9,6 +9,7 @@ import ETTmValidity from "./sections/ETTmValidity";
 import SignificancePanel from "./sections/SignificancePanel";
 import AnomalyDetection from "./sections/AnomalyDetection";
 import AnomalyStressTest from "./sections/AnomalyStressTest";
+import ThresholdExplorer from "./sections/ThresholdExplorer";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import FrozenFailure from "./sections/FrozenFailure";
@@ -27,6 +28,7 @@ const NAV = [
   { id: "significance", label: "Significance" },
   { id: "anomaly", label: "Anomaly" },
   { id: "stress-test", label: "Stress test" },
+  { id: "threshold", label: "Threshold" },
   { id: "accuracy-detection", label: "Acc. vs Detection" },
   { id: "efficiency", label: "Efficiency" },
   { id: "frozen", label: "Frozen" },
@@ -158,6 +160,7 @@ export default function App() {
         <SignificancePanel />
         <AnomalyDetection />
         <AnomalyStressTest />
+        <ThresholdExplorer />
         <AccuracyVsDetection />
         <EfficiencyComplexity />
         <FrozenFailure />
