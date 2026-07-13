@@ -56,6 +56,33 @@ export type AnomalyData = {
   }[];
 };
 
+export type EttmRow = {
+  dataset: string;
+  model: string;
+  horizon: number;
+  input_type: string;
+  mae: number;
+  mae_std: number;
+  rmse: number;
+  wape: number;
+  params: number;
+  rank: number;
+};
+
+export type InputLengthData = {
+  rows: {
+    model: string;
+    input_len: number;
+    mae: number;
+    mae_std: number;
+    rmse: number;
+    wape: number;
+    params: number;
+    rank: number;
+  }[];
+  summary: { input_len: number; best_model: string; ranking: string }[];
+};
+
 export type EfficiencyRow = {
   dataset: string;
   model: string;

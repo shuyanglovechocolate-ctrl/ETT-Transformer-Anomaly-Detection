@@ -25,6 +25,8 @@ RESULTS = REPO_ROOT / "results"
 METRICS = RESULTS / "metrics"
 ANOM = RESULTS / "anomaly" / "metrics"
 PRED_DIR = RESULTS / "predictions"
+EXTERNAL = RESULTS / "external_validity"
+SENSITIVITY = RESULTS / "sensitivity"
 FIGURES = RESULTS / "figures"
 OUT = REPO_ROOT / "web" / "public" / "data"
 FIG_OUT = REPO_ROOT / "web" / "public" / "figures"
@@ -258,6 +260,54 @@ def build_frozen() -> None:
     write_json("frozen.json", {"detectors": detectors, "diagnosis": diagnosis, "contrast": contrast})
 
 
+# --- external validity: does the finding transfer to 15-minute ETTm? ------
+def build_ettm() -> None:
+    rows = read_csv(EXTERNAL / "ettm_forecasting_comparison.csv")
+    records = [
+        {
+            "dataset": r["dataset"],
+            "model": r["model"],
+            "horizon": int(r["horizon"]),
+            "input_type": r["input_type"],
+            "mae": num(r["mean_mae"]),
+            "mae_std": num(r["std_mae"]),
+            "rmse": num(r["mean_rmse"]),
+            "wape": num(r["mean_wape"], 2),
+            "params": int(r["total_parameters"]),
+            "rank": int(r["rank_within_dataset"]),
+        }
+        for r in rows
+    ]
+    write_json("ettm.json", records)
+
+
+# --- input-length sensitivity ablation ------------------------------------
+def build_inputlen() -> None:
+    rows = read_csv(SENSITIVITY / "input_len_ablation.csv")
+    records = [
+        {
+            "model": r["model"],
+            "input_len": int(r["input_len"]),
+            "mae": num(r["mean_mae"]),
+            "mae_std": num(r["std_mae"]),
+            "rmse": num(r["mean_rmse"]),
+            "wape": num(r["mean_wape"], 2),
+            "params": int(r["total_parameters"]),
+            "rank": int(r["rank_within_input_len"]),
+        }
+        for r in rows
+    ]
+    summary = [
+        {
+            "input_len": int(r["input_len"]),
+            "best_model": r["best_model"],
+            "ranking": r["ranking_best_to_worst"],
+        }
+        for r in read_csv(SENSITIVITY / "input_len_ablation_summary.csv")
+    ]
+    write_json("input_length.json", {"rows": records, "summary": summary})
+
+
 # --- 6. attention analysis (supplementary) + static figures ---------------
 def build_attention() -> None:
     rows = read_csv(METRICS / "attention_summary.csv")
@@ -321,6 +371,8 @@ def main() -> None:
     build_predictions()
     build_anomaly()
     build_efficiency()
+    build_ettm()
+    build_inputlen()
     build_frozen()
     build_attention()
     build_figures()

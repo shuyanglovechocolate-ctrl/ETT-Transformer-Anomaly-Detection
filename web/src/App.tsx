@@ -3,6 +3,8 @@ import Hero from "./sections/Hero";
 import EDA from "./sections/EDA";
 import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
+import InputLengthAblation from "./sections/InputLengthAblation";
+import ETTmValidity from "./sections/ETTmValidity";
 import AnomalyDetection from "./sections/AnomalyDetection";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
@@ -16,6 +18,8 @@ const NAV = [
   { id: "eda", label: "Data" },
   { id: "forecasting", label: "Forecasting" },
   { id: "forecast-viz", label: "Predictions" },
+  { id: "input-length", label: "Input length" },
+  { id: "ettm", label: "ETTm" },
   { id: "anomaly", label: "Anomaly" },
   { id: "accuracy-detection", label: "Acc. vs Detection" },
   { id: "efficiency", label: "Efficiency" },
@@ -35,13 +39,14 @@ function Nav() {
           ETT<span className="text-accent">/</span>residual-ad
         </a>
 
-        {/* desktop links */}
-        <div className="hidden gap-6 lg:flex">
+        {/* desktop links — horizontally scrollable so the growing section list
+            never breaks the layout */}
+        <div className="no-scrollbar mx-4 hidden min-w-0 flex-1 gap-6 overflow-x-auto lg:flex">
           {NAV.map((n) => (
             <a
               key={n.id}
               href={`#${n.id}`}
-              className="text-sm text-muted transition-colors hover:text-ink"
+              className="whitespace-nowrap text-sm text-muted transition-colors hover:text-ink"
             >
               {n.label}
             </a>
@@ -141,6 +146,8 @@ export default function App() {
         <EDA />
         <ModelComparison />
         <ForecastViz />
+        <InputLengthAblation />
+        <ETTmValidity />
         <AnomalyDetection />
         <AccuracyVsDetection />
         <EfficiencyComplexity />

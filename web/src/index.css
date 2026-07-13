@@ -85,6 +85,14 @@
   }
 }
 
+/* hide scrollbar on the horizontally-scrollable nav (scales to many sections) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* very subtle light wash behind the hero (Apple keeps this clean) */
 .hero-glow {
   background: linear-gradient(180deg, rgb(var(--surface-2)) 0%, rgb(var(--bg)) 60%);
