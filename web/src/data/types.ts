@@ -54,6 +54,15 @@ export type AnomalyData = {
     magnitude_scale: number;
     f1: number;
   }[];
+  stress_test: {
+    anomaly_type: string;
+    detector_type: string;
+    pr_auc: number | null;
+    roc_auc: number | null;
+    best_f1: number | null;
+    event_recall: number | null;
+    detection_delay: number | null;
+  }[];
 };
 
 export type EttmRow = {

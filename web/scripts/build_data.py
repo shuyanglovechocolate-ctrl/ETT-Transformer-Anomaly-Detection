@@ -194,6 +194,38 @@ def build_anomaly() -> None:
         for (atype, scale), vals in sorted(agg.items())
     ]
 
+    # stress test: unify the original (spike/level_shift/frozen) and extended
+    # (drift/noise_burst/stuck_with_jitter) detector benchmarks into one
+    # (anomaly_type, detector) matrix. The two experiment sets report different
+    # metric families, so cells are intentionally sparse — a missing metric is
+    # left as null rather than filled, to stay faithful to what was measured.
+    stress: dict[tuple[str, str], dict] = defaultdict(dict)
+    for r in read_csv(ANOM / "anomaly_threshold_free_summary.csv"):
+        stress[(r["anomaly_type"], r["detector_type"])].update(
+            pr_auc=num(r["mean_pr_auc"]),
+            roc_auc=num(r["mean_roc_auc"]),
+            best_f1=num(r["mean_best_f1"]),
+        )
+    for r in read_csv(ANOM / "anomaly_extended_types_summary.csv"):
+        stress[(r["anomaly_type"], r["detector_type"])].update(
+            pr_auc=num(r["mean_average_precision"]),
+            best_f1=num(r["mean_oracle_best_f1"]),
+            event_recall=num(r["mean_event_recall"]),
+            detection_delay=num(r["mean_detection_delay"], 1),
+        )
+    payload["stress_test"] = [
+        {
+            "anomaly_type": atype,
+            "detector_type": dtype,
+            "pr_auc": m.get("pr_auc"),
+            "roc_auc": m.get("roc_auc"),
+            "best_f1": m.get("best_f1"),
+            "event_recall": m.get("event_recall"),
+            "detection_delay": m.get("detection_delay"),
+        }
+        for (atype, dtype), m in sorted(stress.items())
+    ]
+
     write_json("anomaly.json", payload)
 
 

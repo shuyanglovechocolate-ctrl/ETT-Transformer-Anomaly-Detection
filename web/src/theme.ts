@@ -29,6 +29,9 @@ export const anomalyColors: Record<string, string> = {
   spike: "#0071e3",
   level_shift: "#ff9500",
   frozen: "#d93a3a",
+  drift: "#34a853",
+  noise_burst: "#9b59d0",
+  stuck_with_jitter: "#30a0a8",
 };
 
 export const modelLabels: Record<string, string> = {

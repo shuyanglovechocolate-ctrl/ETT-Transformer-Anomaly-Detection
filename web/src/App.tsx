@@ -6,6 +6,7 @@ import ForecastViz from "./sections/ForecastViz";
 import InputLengthAblation from "./sections/InputLengthAblation";
 import ETTmValidity from "./sections/ETTmValidity";
 import AnomalyDetection from "./sections/AnomalyDetection";
+import AnomalyStressTest from "./sections/AnomalyStressTest";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import FrozenFailure from "./sections/FrozenFailure";
@@ -21,6 +22,7 @@ const NAV = [
   { id: "input-length", label: "Input length" },
   { id: "ettm", label: "ETTm" },
   { id: "anomaly", label: "Anomaly" },
+  { id: "stress-test", label: "Stress test" },
   { id: "accuracy-detection", label: "Acc. vs Detection" },
   { id: "efficiency", label: "Efficiency" },
   { id: "frozen", label: "Frozen" },
@@ -149,6 +151,7 @@ export default function App() {
         <InputLengthAblation />
         <ETTmValidity />
         <AnomalyDetection />
+        <AnomalyStressTest />
         <AccuracyVsDetection />
         <EfficiencyComplexity />
         <FrozenFailure />
