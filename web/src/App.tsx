@@ -6,6 +6,7 @@ import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
 import InputLengthAblation from "./sections/InputLengthAblation";
 import ETTmValidity from "./sections/ETTmValidity";
+import SignificancePanel from "./sections/SignificancePanel";
 import AnomalyDetection from "./sections/AnomalyDetection";
 import AnomalyStressTest from "./sections/AnomalyStressTest";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
@@ -23,6 +24,7 @@ const NAV = [
   { id: "forecast-viz", label: "Predictions" },
   { id: "input-length", label: "Input length" },
   { id: "ettm", label: "ETTm" },
+  { id: "significance", label: "Significance" },
   { id: "anomaly", label: "Anomaly" },
   { id: "stress-test", label: "Stress test" },
   { id: "accuracy-detection", label: "Acc. vs Detection" },
@@ -153,6 +155,7 @@ export default function App() {
         <ForecastViz />
         <InputLengthAblation />
         <ETTmValidity />
+        <SignificancePanel />
         <AnomalyDetection />
         <AnomalyStressTest />
         <AccuracyVsDetection />

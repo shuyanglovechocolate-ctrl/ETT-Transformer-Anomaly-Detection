@@ -340,6 +340,32 @@ def build_inputlen() -> None:
     write_json("input_length.json", {"rows": records, "summary": summary})
 
 
+# --- 5b. pairwise statistical significance (paired bootstrap) --------------
+def build_significance() -> None:
+    # Paired-bootstrap 95% CIs on the MAE difference for every model pair, per
+    # (dataset, input_type, horizon). Only MAE was tested, so no metric axis is
+    # emitted; delta = MAE(model_a) - MAE(model_b) (negative => model_a better).
+    records = [
+        {
+            "dataset": r["dataset"],
+            "input_type": r["input_type"],
+            "horizon": int(r["horizon"]),
+            "model_a": r["model_a"],
+            "model_b": r["model_b"],
+            "mae_a": num(r["mean_abs_error_a"]),
+            "mae_b": num(r["mean_abs_error_b"]),
+            "delta": num(r["mae_diff_a_minus_b"]),
+            "ci_low": num(r["bootstrap_ci_low"]),
+            "ci_high": num(r["bootstrap_ci_high"]),
+            "a_better": r["a_better"].strip().lower() == "true",
+            "significant": r["significant"].strip().lower() == "true",
+            "num_points": int(r["num_points"]),
+        }
+        for r in read_csv(METRICS / "model_significance_tests.csv")
+    ]
+    write_json("significance.json", {"comparisons": records})
+
+
 # --- 6. attention analysis (supplementary) + static figures ---------------
 def build_attention() -> None:
     rows = read_csv(METRICS / "attention_summary.csv")
@@ -405,6 +431,7 @@ def main() -> None:
     build_efficiency()
     build_ettm()
     build_inputlen()
+    build_significance()
     build_frozen()
     build_attention()
     build_figures()

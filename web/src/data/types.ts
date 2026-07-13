@@ -65,6 +65,24 @@ export type AnomalyData = {
   }[];
 };
 
+export type SignificanceData = {
+  comparisons: {
+    dataset: string;
+    input_type: string;
+    horizon: number;
+    model_a: string;
+    model_b: string;
+    mae_a: number;
+    mae_b: number;
+    delta: number; // MAE(model_a) - MAE(model_b); negative => model_a better
+    ci_low: number;
+    ci_high: number;
+    a_better: boolean;
+    significant: boolean;
+    num_points: number;
+  }[];
+};
+
 export type EttmRow = {
   dataset: string;
   model: string;
