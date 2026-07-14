@@ -95,6 +95,21 @@ export type SignificanceData = {
   }[];
 };
 
+export type LatencyData = {
+  records: {
+    model: string;
+    latency_ms_per_1k: number;
+    latency_std: number;
+    latency_ms_per_batch: number;
+    params: number;
+  }[];
+  device: string;
+  dataset: string;
+  horizon: number | null;
+  input_type: string;
+  num_repeats: number | null;
+};
+
 export type EttmRow = {
   dataset: string;
   model: string;

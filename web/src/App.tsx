@@ -12,6 +12,7 @@ import AnomalyStressTest from "./sections/AnomalyStressTest";
 import ThresholdExplorer from "./sections/ThresholdExplorer";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
+import LatencyCost from "./sections/LatencyCost";
 import FrozenFailure from "./sections/FrozenFailure";
 import AttentionAnalysis from "./sections/AttentionAnalysis";
 import Citation from "./sections/Citation";
@@ -31,6 +32,7 @@ const NAV = [
   { id: "threshold", label: "Threshold" },
   { id: "accuracy-detection", label: "Acc. vs Detection" },
   { id: "efficiency", label: "Efficiency" },
+  { id: "latency", label: "Latency" },
   { id: "frozen", label: "Frozen" },
   { id: "attention", label: "Attention" },
 ];
@@ -163,6 +165,7 @@ export default function App() {
         <ThresholdExplorer />
         <AccuracyVsDetection />
         <EfficiencyComplexity />
+        <LatencyCost />
         <FrozenFailure />
         <AttentionAnalysis />
       </main>

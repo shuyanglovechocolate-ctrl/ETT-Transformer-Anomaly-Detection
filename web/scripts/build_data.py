@@ -267,6 +267,33 @@ def build_efficiency() -> None:
     write_json("efficiency.json", records)
 
 
+# --- 5a. inference latency: runtime cost per model ------------------------
+def build_latency() -> None:
+    rows = read_csv(METRICS / "inference_latency_summary.csv")
+    records = [
+        {
+            "model": r["model"],
+            "latency_ms_per_1k": num(r["mean_latency_ms_per_1k_windows"], 1),
+            "latency_std": num(r["std_latency_ms_per_1k_windows"], 1),
+            "latency_ms_per_batch": num(r["mean_latency_ms_per_batch"], 2),
+            "params": int(r["parameters"]),
+        }
+        for r in rows
+    ]
+    meta = rows[0] if rows else {}
+    write_json(
+        "latency.json",
+        {
+            "records": records,
+            "device": meta.get("device", ""),
+            "dataset": meta.get("dataset", ""),
+            "horizon": int(meta["horizon"]) if meta.get("horizon") else None,
+            "input_type": meta.get("input_type", ""),
+            "num_repeats": int(meta["num_repeats"]) if meta.get("num_repeats") else None,
+        },
+    )
+
+
 # --- 5. frozen failure case: the residual blind spot + flatness fix -------
 def build_frozen() -> None:
     det_order = ["residual", "flatness", "hybrid_or"]
@@ -450,6 +477,7 @@ def main() -> None:
     build_ettm()
     build_inputlen()
     build_significance()
+    build_latency()
     build_frozen()
     build_attention()
     build_figures()
