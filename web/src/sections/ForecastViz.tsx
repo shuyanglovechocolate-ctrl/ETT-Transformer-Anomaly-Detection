@@ -99,6 +99,7 @@ export default function ForecastViz() {
       id="forecast-viz"
       title="See a forecaster track the real signal"
       lead="First-step predictions vs. ground-truth oil temperature on the held-out test set. Drag the slider or scroll to zoom into any window."
+      tint
     >
       <div className="mb-8 flex flex-wrap gap-x-8 gap-y-4">
         <Segmented label="Dataset" value={dataset} options={["ETTh1", "ETTh2"]} onChange={setDataset} />

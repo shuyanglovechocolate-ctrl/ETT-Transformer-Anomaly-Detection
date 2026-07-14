@@ -50,7 +50,6 @@ export default function AnomalyDetection() {
       eyebrow="Module 4 · Residual anomaly detection"
       title="The residual signal works — until it doesn't"
       lead="Reusing forecast residuals as an anomaly score cleanly catches spikes and level shifts (high recall), but collapses on frozen segments, where a flat signal produces small residuals. Reporting where the method fails is part of the contribution."
-      tint
     >
       <div className="grid gap-6 md:grid-cols-3">
         <div className="card p-5 md:col-span-2">

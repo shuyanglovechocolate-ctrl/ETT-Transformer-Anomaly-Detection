@@ -25,7 +25,6 @@ export default function AttentionAnalysis() {
       id="attention"
       title="Where does the Transformer attend?"
       lead="A descriptive look at how the encoder distributes attention over the 96 input lags. This is context for the earlier results, not a driver of them."
-      tint
     >
       <div className="grid gap-6 lg:grid-cols-3">
         {/* main image: attention mass by lag (static, no CSV exists for it) */}

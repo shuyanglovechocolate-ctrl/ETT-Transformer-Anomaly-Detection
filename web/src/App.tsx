@@ -6,44 +6,84 @@ import ModelComparison from "./sections/ModelComparison";
 import ForecastViz from "./sections/ForecastViz";
 import InputLengthAblation from "./sections/InputLengthAblation";
 import ETTmValidity from "./sections/ETTmValidity";
-import SignificancePanel from "./sections/SignificancePanel";
 import AnomalyDetection from "./sections/AnomalyDetection";
 import AnomalyStressTest from "./sections/AnomalyStressTest";
 import ThresholdExplorer from "./sections/ThresholdExplorer";
+import FrozenFailure from "./sections/FrozenFailure";
 import AccuracyVsDetection from "./sections/AccuracyVsDetection";
+import SignificancePanel from "./sections/SignificancePanel";
 import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import LatencyCost from "./sections/LatencyCost";
-import FrozenFailure from "./sections/FrozenFailure";
 import AttentionAnalysis from "./sections/AttentionAnalysis";
 import DownloadCenter from "./sections/DownloadCenter";
 import Citation from "./sections/Citation";
 import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
 
-const NAV = [
-  { id: "eda", label: "Data" },
-  { id: "methodology", label: "Methodology" },
-  { id: "forecasting", label: "Forecasting" },
-  { id: "forecast-viz", label: "Predictions" },
-  { id: "input-length", label: "Input length" },
-  { id: "ettm", label: "ETTm" },
-  { id: "significance", label: "Significance" },
-  { id: "anomaly", label: "Anomaly" },
-  { id: "stress-test", label: "Stress test" },
-  { id: "threshold", label: "Threshold" },
-  { id: "accuracy-detection", label: "Acc. vs Detection" },
-  { id: "efficiency", label: "Efficiency" },
-  { id: "latency", label: "Latency" },
-  { id: "frozen", label: "Frozen" },
-  { id: "attention", label: "Attention" },
-  { id: "downloads", label: "Downloads" },
+// Five thematic groups mirror the report narrative:
+// Data & Protocol → Forecasting Evidence → Robustness & Failure →
+// Statistical & Practical Evidence → Interpretation & Reproducibility.
+// Desktop shows the five group entries; mobile expands each into its sections.
+const NAV_GROUPS = [
+  {
+    label: "Data",
+    id: "eda",
+    items: [
+      { id: "eda", label: "Data" },
+      { id: "methodology", label: "Methodology" },
+    ],
+  },
+  {
+    label: "Forecasting",
+    id: "forecasting",
+    items: [
+      { id: "forecasting", label: "Model comparison" },
+      { id: "forecast-viz", label: "Predictions" },
+      { id: "input-length", label: "Input length" },
+      { id: "ettm", label: "ETTm validity" },
+    ],
+  },
+  {
+    label: "Anomaly",
+    id: "anomaly",
+    items: [
+      { id: "anomaly", label: "Detection" },
+      { id: "stress-test", label: "Stress test" },
+      { id: "threshold", label: "Threshold" },
+      { id: "frozen", label: "Frozen failure" },
+    ],
+  },
+  {
+    label: "Evidence",
+    id: "accuracy-detection",
+    items: [
+      { id: "accuracy-detection", label: "Accuracy vs detection" },
+      { id: "significance", label: "Significance" },
+      { id: "efficiency", label: "Efficiency" },
+      { id: "latency", label: "Latency" },
+    ],
+  },
+  {
+    label: "Resources",
+    id: "attention",
+    items: [
+      { id: "attention", label: "Attention" },
+      { id: "downloads", label: "Downloads" },
+      { id: "reproducibility", label: "Reproducibility" },
+    ],
+  },
 ];
 
 const GITHUB_URL =
   "https://github.com/shuyanglovechocolate-ctrl/ETT-Transformer-Anomaly-Detection";
 
 function Nav() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // mobile menu
+  const [openGroup, setOpenGroup] = useState<string | null>(null); // mobile accordion
+  const closeMenu = () => {
+    setOpen(false);
+    setOpenGroup(null);
+  };
   return (
     <nav className="sticky top-0 z-50 border-b border-border/60 bg-bg/80 backdrop-blur">
       <div className="mx-auto flex max-w-content items-center justify-between px-6 py-4">
@@ -51,16 +91,15 @@ function Nav() {
           ETT<span className="text-accent">/</span>residual-ad
         </a>
 
-        {/* desktop links — horizontally scrollable so the growing section list
-            never breaks the layout */}
-        <div className="no-scrollbar mx-4 hidden min-w-0 flex-1 gap-6 overflow-x-auto lg:flex">
-          {NAV.map((n) => (
+        {/* desktop: five group entries, each jumping to the group's first section */}
+        <div className="mx-4 hidden min-w-0 flex-1 items-center justify-center gap-8 lg:flex">
+          {NAV_GROUPS.map((g) => (
             <a
-              key={n.id}
-              href={`#${n.id}`}
+              key={g.id}
+              href={`#${g.id}`}
               className="whitespace-nowrap text-sm text-muted transition-colors hover:text-ink"
             >
-              {n.label}
+              {g.label}
             </a>
           ))}
         </div>
@@ -94,21 +133,50 @@ function Nav() {
         </div>
       </div>
 
-      {/* mobile dropdown */}
+      {/* mobile dropdown — five expandable groups */}
       {open && (
-        <div id="mobile-nav" className="border-t border-border/60 bg-bg px-6 py-2 lg:hidden">
-          <ul className="grid grid-cols-2 gap-1 py-2">
-            {NAV.map((n) => (
-              <li key={n.id}>
-                <a
-                  href={`#${n.id}`}
-                  onClick={() => setOpen(false)}
-                  className="block rounded-md px-3 py-2.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-                >
-                  {n.label}
-                </a>
-              </li>
-            ))}
+        <div id="mobile-nav" className="border-t border-border/60 bg-bg px-4 py-1 lg:hidden">
+          <ul>
+            {NAV_GROUPS.map((g) => {
+              const isOpen = openGroup === g.id;
+              return (
+                <li key={g.id} className="border-b border-border/40 last:border-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroup(isOpen ? null : g.id)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between px-2 py-3.5 text-left text-sm font-medium text-ink"
+                  >
+                    {g.label}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden="true"
+                      className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    >
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {isOpen && (
+                    <ul className="pb-2">
+                      {g.items.map((it) => (
+                        <li key={it.id}>
+                          <a
+                            href={`#${it.id}`}
+                            onClick={closeMenu}
+                            className="block rounded-md px-4 py-2.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+                          >
+                            {it.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -120,7 +188,7 @@ function Footer() {
   const { data } = useJson<Manifest>("manifest.json");
   const repro = data?.reproducibility;
   return (
-    <footer className="border-t border-border/60 py-16">
+    <footer id="reproducibility" className="border-t border-border/60 py-16">
       <div className="mx-auto max-w-content px-6">
         <p className="eyebrow mb-4">Reproducibility</p>
         <div className="grid gap-4 text-sm text-muted md:grid-cols-3">
@@ -154,21 +222,26 @@ export default function App() {
     <div id="top">
       <Nav />
       <main>
+        {/* Data & Protocol */}
         <Hero />
         <EDA />
         <MethodologyAudit />
+        {/* Forecasting Evidence */}
         <ModelComparison />
         <ForecastViz />
         <InputLengthAblation />
         <ETTmValidity />
-        <SignificancePanel />
+        {/* Robustness & Failure Analysis */}
         <AnomalyDetection />
         <AnomalyStressTest />
         <ThresholdExplorer />
+        <FrozenFailure />
+        {/* Statistical & Practical Evidence */}
         <AccuracyVsDetection />
+        <SignificancePanel />
         <EfficiencyComplexity />
         <LatencyCost />
-        <FrozenFailure />
+        {/* Interpretation & Reproducibility */}
         <AttentionAnalysis />
         <DownloadCenter />
       </main>

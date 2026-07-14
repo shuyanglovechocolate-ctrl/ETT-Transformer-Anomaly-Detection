@@ -149,6 +149,7 @@ export default function AccuracyVsDetection() {
       eyebrow="Module 4 · Key finding"
       title="Forecast Accuracy vs Detection Capability"
       lead="Each point is one model run: its forecasting error (x) against how well its residuals detect injected anomalies (y). Point size encodes event recall. If accuracy drove detection, points would fall on a downward line — they do not."
+      tint
     >
       <div className="mb-8 flex flex-wrap gap-x-8 gap-y-4">
         <Segmented

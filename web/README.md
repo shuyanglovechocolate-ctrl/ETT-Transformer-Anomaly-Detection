@@ -99,16 +99,39 @@ committed and preserved when the CSVs are absent).
 
 ## Sections (narrative order)
 
-1. **Hero** — headline metrics (bento grid)
-2. **EDA** — dataset background: OT trend, feature series, correlation structure
-3. **Forecasting** — interactive MAE comparison across models / datasets / horizons
-4. **Predictions** — actual vs. predicted oil temperature with zoom
-5. **Input length** — MAE/RMSE/WAPE across look-back 48 / 96 / 192
+The page is organised into five thematic groups, mirrored by the five navigation
+entries and an alternating white / tinted background rhythm.
+
+**Data & Protocol**
+
+1. **Data** — dataset background: OT trend, feature series, correlation structure
+2. **Methodology** — the leakage-free protocol and a risk-by-risk audit
+
+**Forecasting Evidence** *(tinted)*
+
+3. **Forecasting comparison** — interactive MAE comparison across models / datasets / horizons
+4. **Prediction explorer** — actual vs. predicted oil temperature with zoom
+5. **Input-length ablation** — MAE/RMSE/WAPE across look-back 48 / 96 / 192
 6. **ETTm external validity** — does the linear-family advantage transfer to 15-min data?
-7. **Anomaly** — residual detector performance by anomaly type
-8. **Accuracy vs. detection** — forecasting accuracy vs. detection quality scatter
-9. **Efficiency** — accuracy vs. model complexity (parameters / checkpoint size)
+
+**Robustness & Failure Analysis**
+
+7. **Anomaly detection** — residual detector performance by anomaly type
+8. **Anomaly stress test** — six anomaly shapes × five detectors, threshold-free metrics
+9. **Threshold explorer** — how the score→alarm cutoff trades precision for recall
 10. **Frozen failure** — the residual blind spot and the temporal-flatness fix
-11. **Attention** — exploratory Transformer attention over input lags
+
+**Statistical & Practical Evidence** *(tinted)*
+
+11. **Accuracy vs. detection** — forecasting accuracy vs. detection quality scatter
+12. **Significance panel** — paired-bootstrap 95% CIs on every pairwise MAE difference
+13. **Model efficiency** — accuracy vs. model complexity (parameters / checkpoint size)
+14. **Inference latency** — measured runtime cost per model (ms / 1k windows)
+
+**Interpretation & Reproducibility**
+
+15. **Attention analysis** — exploratory Transformer attention over input lags
+16. **Downloads** — every processed dataset behind the figures, plus raw CSV / repo links
+17. **Reproducibility** — environment, seeds and commit (page footer)
 
 A closing **Citation** block (APA + BibTeX + copy) completes the page.

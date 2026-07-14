@@ -90,6 +90,7 @@ export default function InputLengthAblation() {
       eyebrow="Ablation · input length"
       title="How much does look-back length matter?"
       lead="Re-running the strongest models at input lengths 48 / 96 / 192 (horizon 96). The question: does a longer look-back let the Transformer overtake the linear family? It does not."
+      tint
     >
       <div className="mb-8 flex flex-wrap gap-x-8 gap-y-4">
         <Segmented

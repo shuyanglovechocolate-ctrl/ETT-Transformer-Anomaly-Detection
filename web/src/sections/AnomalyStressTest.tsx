@@ -125,7 +125,6 @@ export default function AnomalyStressTest() {
       eyebrow="Module 4 · Detector stress test"
       title="Six anomaly shapes against five detectors"
       lead="Beyond the residual score, the same injected series are scored by five detectors across six anomaly shapes. Switch the metric to see who wins where — and where the honest gaps are: ROC-AUC was only measured on the original three shapes, and event recall / detection delay only on the three added ones."
-      tint
     >
       <div className="mb-8">
         <Segmented
