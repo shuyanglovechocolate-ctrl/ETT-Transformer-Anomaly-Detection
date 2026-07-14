@@ -16,7 +16,7 @@ function StatCard({
   hint,
 }: {
   label: string;
-  value: number;
+  value: number | null;
   decimals?: number;
   span?: string;
   hint?: string;
@@ -31,7 +31,8 @@ function StatCard({
       <p className="eyebrow">{label}</p>
       <div className="mt-6">
         <p className="stat-num">
-          <CountUp value={value} decimals={decimals} />
+          {/* show a placeholder while manifest.json loads, never a misleading 0 */}
+          {value === null ? <span className="text-faint">—</span> : <CountUp value={value} decimals={decimals} />}
         </p>
         {hint && <p className="mt-1 text-sm text-faint">{hint}</p>}
       </div>
@@ -65,12 +66,12 @@ export default function Hero() {
 
         {/* bento metric grid */}
         <div className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard label="Best MAE" value={h?.best_mae ?? 0} decimals={3} span="md:col-span-2 md:row-span-1" hint="lowest oil-temp MAE across all configs" />
-          <StatCard label="Models" value={h?.num_models ?? 0} hint="naive → Transformer" />
-          <StatCard label="Anomaly types" value={h?.num_anomaly_types ?? 0} hint="spike · level-shift · frozen" />
-          <StatCard label="Datasets" value={h?.num_datasets ?? 0} hint="ETTh1 · ETTh2" />
-          <StatCard label="Horizons" value={h?.num_horizons ?? 0} hint="24 · 48 · 96 steps" />
-          <StatCard label="Seeds / config" value={h?.num_seeds ?? 0} hint="multi-seed robustness" />
+          <StatCard label="Best MAE" value={h ? h.best_mae : null} decimals={3} span="md:col-span-2 md:row-span-1" hint="lowest oil-temp MAE across all configs" />
+          <StatCard label="Models" value={h ? h.num_models : null} hint="naive → Transformer" />
+          <StatCard label="Anomaly types" value={h ? h.num_anomaly_types : null} hint="spike · level-shift · frozen" />
+          <StatCard label="Datasets" value={h ? h.num_datasets : null} hint="ETTh1 · ETTh2" />
+          <StatCard label="Horizons" value={h ? h.num_horizons : null} hint="24 · 48 · 96 steps" />
+          <StatCard label="Seeds / config" value={h ? h.num_seeds : null} hint="multi-seed robustness" />
         </div>
       </div>
     </header>
