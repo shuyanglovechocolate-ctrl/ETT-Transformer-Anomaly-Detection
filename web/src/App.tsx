@@ -15,6 +15,7 @@ import EfficiencyComplexity from "./sections/EfficiencyComplexity";
 import LatencyCost from "./sections/LatencyCost";
 import FrozenFailure from "./sections/FrozenFailure";
 import AttentionAnalysis from "./sections/AttentionAnalysis";
+import DownloadCenter from "./sections/DownloadCenter";
 import Citation from "./sections/Citation";
 import { useJson } from "./data/useJson";
 import type { Manifest } from "./data/types";
@@ -35,6 +36,7 @@ const NAV = [
   { id: "latency", label: "Latency" },
   { id: "frozen", label: "Frozen" },
   { id: "attention", label: "Attention" },
+  { id: "downloads", label: "Downloads" },
 ];
 
 const GITHUB_URL =
@@ -168,6 +170,7 @@ export default function App() {
         <LatencyCost />
         <FrozenFailure />
         <AttentionAnalysis />
+        <DownloadCenter />
       </main>
       <Footer />
       <Citation />
